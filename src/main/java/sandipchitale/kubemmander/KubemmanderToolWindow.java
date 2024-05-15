@@ -244,23 +244,27 @@ public class KubemmanderToolWindow {
         includeNonNamespacedCheckBox.setSelected(true);
         bottomRightToolBar.add(includeNonNamespacedCheckBox);
 
+        bottomRightToolBar.add(new JLabel(" [ "));
+
         includeNamespacedCheckBox = new JCheckBox("Namespaced");
         includeNamespacedCheckBox.setSelected(true);
         bottomRightToolBar.add(includeNamespacedCheckBox);
 
-        JLabel fromLabel = new JLabel(" | From: ");
+        JLabel fromLabel = new JLabel("resources from:");
         bottomRightToolBar.add(fromLabel);
 
         allNamespacesCheckBox = new JCheckBox();
         allNamespacesCheckBox.setSelected(true);
         bottomRightToolBar.add(allNamespacesCheckBox);
 
-        JLabel allOrSelectedNamespacesLabel = new JLabel("All Namespaces | Selected Namespaces:");
+        JLabel allOrSelectedNamespacesLabel = new JLabel("All Namespaces | Selected Namespace:");
         bottomRightToolBar.add(allOrSelectedNamespacesLabel);
 
         selectedNamespacesComboBox = new ComboBox<>();
         selectedNamespacesComboBox.setMinimumAndPreferredWidth(300);
         bottomRightToolBar.add(selectedNamespacesComboBox);
+
+        bottomRightToolBar.add(new JLabel(" ]"));
 
         allNamespacesCheckBox.addActionListener(this::adjustSelectedNamespacesComboBoxState);
         adjustSelectedNamespacesComboBoxState(null);
