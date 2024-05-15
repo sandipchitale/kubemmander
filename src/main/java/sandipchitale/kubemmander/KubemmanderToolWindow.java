@@ -567,7 +567,7 @@ public class KubemmanderToolWindow {
     private void disconnectFromCluster(ActionEvent actionEvent, boolean reconnect) {
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
             ApplicationManager.getApplication().runReadAction(() -> {
-                if (reconnect) {
+                if (reconnect && !allNamespacesCheckBox.isSelected()) {
                     selectedNamespace = (String) selectedNamespacesComboBox.getSelectedItem();
                 }
                 try {
