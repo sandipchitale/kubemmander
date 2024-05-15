@@ -60,6 +60,10 @@ public class KubemmanderToolWindow {
     private final JButton disconnectFromCusterButton;
     private final JButton reconnectToCusterButton;
     private final JLabel serverVersion;
+
+    private final JCheckBox includeNonNamespacedCheckBox;
+    private final JCheckBox includeNamespacedCheckBox;
+
     private final JCheckBox allNamespacesCheckBox;
     private final ComboBox<String> selectedNamespacesComboBox;
 
@@ -233,7 +237,18 @@ public class KubemmanderToolWindow {
         JPanel bottomRightToolBar = new JPanel(new FlowLayout(FlowLayout.LEFT));
         bottomToolBar.add(bottomRightToolBar, BorderLayout.EAST);
 
-        JLabel fromLabel = new JLabel("From: ");
+        JLabel includeLabel = new JLabel("Include: ");
+        bottomRightToolBar.add(includeLabel);
+
+        includeNonNamespacedCheckBox = new JCheckBox("Non Namespaced");
+        includeNonNamespacedCheckBox.setSelected(true);
+        bottomRightToolBar.add(includeNonNamespacedCheckBox);
+
+        includeNamespacedCheckBox = new JCheckBox("Namespaced");
+        includeNamespacedCheckBox.setSelected(true);
+        bottomRightToolBar.add(includeNamespacedCheckBox);
+
+        JLabel fromLabel = new JLabel(" | From: ");
         bottomRightToolBar.add(fromLabel);
 
         allNamespacesCheckBox = new JCheckBox();
@@ -421,19 +436,26 @@ public class KubemmanderToolWindow {
                             apiResourceSet.addAll(apiResources.getResources());
                         }
                     });
-                    apiResourceTableModel.addRow(
-                            new Object[] {
-                                    "helmreleases",
-                                    "rel",
-                                    "",
-                                    "✔",
-                                    "",
-                                    "helm ( release )",
-                                    "helmreleases"
-                            });
-                    apiResourceSet.forEach((APIResource apiResource) -> {
+                    if (includeNamespacedCheckBox.isSelected()) {
                         apiResourceTableModel.addRow(
-                                new Object[] {
+                                new Object[]{
+                                        "helmreleases",
+                                        "rel",
+                                        "",
+                                        "✔",
+                                        "",
+                                        "helm ( release )",
+                                        "helmreleases"
+                                });
+                    }
+                    apiResourceSet.forEach((APIResource apiResource) -> {
+                        if (apiResource.getNamespaced() && !includeNamespacedCheckBox.isSelected()) {
+                            return;
+                        } else if (!apiResource.getNamespaced() && !includeNonNamespacedCheckBox.isSelected()) {
+                            return;
+                        }
+                        apiResourceTableModel.addRow(
+                                new Object[]{
                                         apiResource,
                                         String.join(", ", apiResource.getShortNames()),
                                         apiResource.getVersion(),
@@ -451,15 +473,15 @@ public class KubemmanderToolWindow {
                                         .genericKubernetesResources(resourceDefinitionContext)
                                         .list()
                                         .getItems().forEach((GenericKubernetesResource genericKubernetesResource) -> {
-                                            boolean doAddRow = false;
+                                            boolean doAddResourceRow = false;
                                             if (!apiResource.getNamespaced()){
-                                                doAddRow = true;
+                                                doAddResourceRow = true;
                                             } else {
                                                 if (selectedNamespace != null && selectedNamespace.equals(genericKubernetesResource.getMetadata().getNamespace())) {
-                                                    doAddRow = true;
+                                                    doAddResourceRow = true;
                                                 }
                                             }
-                                            if (doAddRow) {
+                                            if (doAddResourceRow) {
                                                 apiResourceTableModel.addRow(
                                                         new Object[]{
                                                                 genericKubernetesResource,
