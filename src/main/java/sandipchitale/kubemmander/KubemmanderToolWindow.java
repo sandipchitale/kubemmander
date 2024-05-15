@@ -348,16 +348,17 @@ public class KubemmanderToolWindow {
                                         try {
                                             shellTerminalWidget.executeCommand(
                                                     "kubectl "
-                                                            + ("get".equals(operation) ? "-o wide " : "")
-                                                            + (apiResource.getNamespaced() ? "-n " + genericKubernetesResource.getMetadata().getNamespace() + " " : "")
-                                                            + operation
-                                                            + " "
-                                                            + apiResource.getKind()
-                                                            + " "
-                                                            + genericKubernetesResource.getMetadata().getName());
+                                                    + ("get".equals(operation) ? "-o wide " : "")
+                                                    + (apiResource.getNamespaced() ? "-n " + genericKubernetesResource.getMetadata().getNamespace() + " " : "")
+                                                    + operation
+                                                    + " "
+                                                    + apiResource.getKind()
+                                                    + " "
+                                                    + genericKubernetesResource.getMetadata().getName());
                                         } catch (IOException exception) {
                                             // Show error dialog
-                                            kubemmanderNotificationGroup.createNotification(
+                                            kubemmanderNotificationGroup
+                                                    .createNotification(
                                                             exception.getMessage()
                                                             ,NotificationType.ERROR)
                                                     .notify(project);
