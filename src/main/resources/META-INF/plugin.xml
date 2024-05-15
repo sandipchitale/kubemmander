@@ -25,8 +25,16 @@
     <change-notes><![CDATA[
 <h2>New Features</h2>
 <ul>
-    <li>Support connect, disconnect action.</li>
+    <li>Support connect, disconnect, reconnect action.</li>
     <li>Wait cursor.</li>
+    <li>Get command</li>
+    <li>Describe command</li>
+    <li>Load command (get -o yaml)</li>
+    <li>Explain command</li>
+</ul>
+<h2>Known Issues</h2>
+<ul>
+    <li>get and describe commands do not work with the New Terminal <sup>Beta</sup></li>
 </ul>
 <h2>Bug Fixes</h2>
 <ul>

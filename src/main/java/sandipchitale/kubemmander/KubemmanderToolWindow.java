@@ -84,7 +84,7 @@ public class KubemmanderToolWindow {
                         "API Resource",
                         "Short Name",
                         "Version",
-                        "Namespaced",
+                        "",
                         "Namespace",
                         "Kind ( API Resource )",
                         ""
@@ -103,7 +103,31 @@ public class KubemmanderToolWindow {
         JBScrollPane scrollPane = new JBScrollPane(apiResourceTable);
         this.contentToolWindow.add(scrollPane, BorderLayout.CENTER);
 
-        TableColumn column = apiResourceTable.getColumnModel().getColumn(6);
+        TableColumn column = apiResourceTable.getColumnModel().getColumn(1);
+        column.setMinWidth(140);
+        column.setWidth(140);
+        column.setMaxWidth(140);
+
+        column = apiResourceTable.getColumnModel().getColumn(2);
+        column.setMinWidth(140);
+        column.setWidth(140);
+        column.setMaxWidth(140);
+
+        column = apiResourceTable.getColumnModel().getColumn(3);
+        column.setMinWidth(26);
+        column.setWidth(26);
+        column.setMaxWidth(26);
+        column.setHeaderRenderer(new DefaultTableCellRenderer() {
+            @Override
+            public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+                Component tableCellRendererComponent = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+                ((JLabel) tableCellRendererComponent).setIcon(KubemmanderIcons.resourceTypeWithIcon.get("namespaces"));
+                ((JLabel) tableCellRendererComponent).setHorizontalAlignment(SwingConstants.CENTER);
+                return tableCellRendererComponent;
+            }
+        });
+
+        column = apiResourceTable.getColumnModel().getColumn(6);
         column.setMinWidth(0);
         column.setWidth(0);
         column.setMaxWidth(0);
@@ -125,6 +149,8 @@ public class KubemmanderToolWindow {
         });
         popup.add(describeMenuItem );
 
+        popup.add(new JSeparator());
+
         JMenuItem loadMenuItem = new JMenuItem("Load");
         loadMenuItem.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent actionEvent) {
@@ -132,6 +158,17 @@ public class KubemmanderToolWindow {
             }
         });
         popup.add(loadMenuItem );
+
+        popup.add(new JSeparator());
+
+        JMenuItem explainMenuItem = new JMenuItem("Explain");
+        explainMenuItem.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent actionEvent) {
+                execute(actionEvent, "explain", project);
+            }
+        });
+        popup.add(explainMenuItem );
+
 
         apiResourceTable.addMouseListener(new MouseAdapter()
         {
@@ -279,17 +316,23 @@ public class KubemmanderToolWindow {
             JPopupMenu popup = (JPopupMenu) menuItem.getParent();
             if (popup.getInvoker() instanceof JTable table) {
                 int selectedRow = table.getSelectedRow();
-                if (selectedRow > 0) {
+                if (selectedRow >= 0) {
                     ApplicationManager.getApplication().invokeLater(() -> {
                         ApplicationManager.getApplication().runWriteAction(() -> {
                             ApplicationManager.getApplication().runReadAction(() -> {
                                 Object valueOfZeroColumn = table.getValueAt(selectedRow, 0);
-                                if (valueOfZeroColumn instanceof APIResource apiResource) {
-                                    System.out.println(apiResource.getName() + " " + apiResource.getKind());
-                                } else if (valueOfZeroColumn instanceof GenericKubernetesResource genericKubernetesResource) {
+                                if (operation.equals("explain")) {
+                                    Object valueOfSixthColumn = table.getValueAt(selectedRow, 6);
+                                    if (valueOfSixthColumn instanceof APIResource apiResource) {
+                                        KubemmanderExplain.explain(apiResource.getName());
+                                    } else if (valueOfSixthColumn instanceof String stringValueOfSixthColumn) {
+                                        KubemmanderExplain.explain(stringValueOfSixthColumn);
+                                    }
+                                    return;
+                                }
+                                if (valueOfZeroColumn instanceof GenericKubernetesResource genericKubernetesResource) {
                                     APIResource apiResource = (APIResource) table.getValueAt(selectedRow, 6);
                                     if (operation.equals("load")) {
-
                                         List<String> kubectlCommand = new LinkedList<>();
                                         kubectlCommand.add("kubectl");
                                         kubectlCommand.add("get");
@@ -595,6 +638,11 @@ public class KubemmanderToolWindow {
 
             Component cellRendererComponent = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
             if (cellRendererComponent instanceof JLabel labelCellRendererComponent) {
+                if (column == 3) {
+                    labelCellRendererComponent.setHorizontalAlignment(SwingConstants.CENTER);
+                } else {
+                    labelCellRendererComponent.setHorizontalAlignment(SwingConstants.LEFT);
+                }
                 labelCellRendererComponent.setIcon(null);
                 if (column == 0) {
                     if (icon == null) {
