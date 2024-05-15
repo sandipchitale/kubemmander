@@ -344,7 +344,9 @@ public class KubemmanderToolWindow {
                                         }).start();
                                     } else {
                                         @NotNull ShellTerminalWidget shellTerminalWidget =
-                                                TerminalToolWindowManager.getInstance(Objects.requireNonNull(project)).createLocalShellWidget(project.getBasePath(), "kubectl", true, true);
+                                                TerminalToolWindowManager
+                                                        .getInstance(Objects.requireNonNull(project))
+                                                        .createLocalShellWidget(project.getBasePath(), "kubectl", true, true);
                                         try {
                                             shellTerminalWidget.executeCommand(
                                                     "kubectl "
