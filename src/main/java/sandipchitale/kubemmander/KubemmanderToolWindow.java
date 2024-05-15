@@ -290,11 +290,11 @@ public class KubemmanderToolWindow {
         JLabel fromLabel = new JLabel("resources from:");
         bottomRightToolBar.add(fromLabel);
 
-        allNamespacesCheckBox = new JCheckBox();
+        allNamespacesCheckBox = new JCheckBox("All Namespaces");
         allNamespacesCheckBox.setSelected(true);
         bottomRightToolBar.add(allNamespacesCheckBox);
 
-        JLabel allOrSelectedNamespacesLabel = new JLabel("All Namespaces | Selected Namespace:");
+        JLabel allOrSelectedNamespacesLabel = new JLabel("| Selected Namespace:");
         bottomRightToolBar.add(allOrSelectedNamespacesLabel);
 
         selectedNamespacesComboBox = new ComboBox<>();
