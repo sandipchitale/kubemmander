@@ -527,7 +527,7 @@ public class KubemmanderToolWindow {
                                             if (!apiResource.getNamespaced()){
                                                 doAddResourceRow = true;
                                             } else {
-                                                if (selectedNamespace != null && selectedNamespace.equals(genericKubernetesResource.getMetadata().getNamespace())) {
+                                                if (allNamespacesCheckBox.isSelected() || (selectedNamespace != null && selectedNamespace.equals(genericKubernetesResource.getMetadata().getNamespace()))) {
                                                     doAddResourceRow = true;
                                                 }
                                             }
@@ -567,8 +567,12 @@ public class KubemmanderToolWindow {
     private void disconnectFromCluster(ActionEvent actionEvent, boolean reconnect) {
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
             ApplicationManager.getApplication().runReadAction(() -> {
-                if (reconnect && !allNamespacesCheckBox.isSelected()) {
-                    selectedNamespace = (String) selectedNamespacesComboBox.getSelectedItem();
+                if (reconnect) {
+                    if (allNamespacesCheckBox.isSelected()) {
+                        selectedNamespace = null;
+                    } else {
+                        selectedNamespace = (String) selectedNamespacesComboBox.getSelectedItem();
+                    }
                 }
                 try {
                     if (kubernetesClient != null) {
@@ -589,6 +593,9 @@ public class KubemmanderToolWindow {
     }
 
     private void adjustSelectedNamespacesComboBoxState(ActionEvent actionEvent) {
+        if (allNamespacesCheckBox.isSelected()) {
+            selectedNamespace = null;
+        }
         selectedNamespacesComboBox.setEnabled(!allNamespacesCheckBox.isSelected());
     }
 
