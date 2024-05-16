@@ -133,12 +133,11 @@ public class KubemmanderToolWindow {
         column.setMaxWidth(0);
 
 
-
         JPopupMenu apiResourcePopupMenu = new JPopupMenu();
         JMenuItem explainApiResourceMenuItem = new JMenuItem("Explain");
         explainApiResourceMenuItem.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent actionEvent) {
-//                executeApiResource(actionEvent, "explain", project);
+                executeApiResourceActions(actionEvent, "explain", project);
             }
         });
         apiResourcePopupMenu.add(explainApiResourceMenuItem);
@@ -168,7 +167,7 @@ public class KubemmanderToolWindow {
                 execute(actionEvent, "load", project);
             }
         });
-        resourcePopupMenu.add(loadMenuItem );
+        resourcePopupMenu.add(loadMenuItem);
 
         resourcePopupMenu.add(new JSeparator());
 
@@ -178,26 +177,23 @@ public class KubemmanderToolWindow {
                 execute(actionEvent, "explain", project);
             }
         });
-        resourcePopupMenu.add(explainMenuItem );
+        resourcePopupMenu.add(explainMenuItem);
 
 
-        apiResourceTable.addMouseListener(new MouseAdapter()
-        {
-            public void mousePressed(MouseEvent e)
-            {
+        apiResourceTable.addMouseListener(new MouseAdapter() {
+            public void mousePressed(MouseEvent e) {
                 showPopup(e);
             }
 
-            public void mouseReleased(MouseEvent e)
-            {
+            public void mouseReleased(MouseEvent e) {
                 showPopup(e);
             }
 
             private void showPopup(MouseEvent e) {
                 if (e.isPopupTrigger()) {
-                    JTable apiResourceTable = (JTable)e.getSource();
-                    int row = apiResourceTable.rowAtPoint( e.getPoint() );
-                    int column = apiResourceTable.columnAtPoint( e.getPoint() );
+                    JTable apiResourceTable = (JTable) e.getSource();
+                    int row = apiResourceTable.rowAtPoint(e.getPoint());
+                    int column = apiResourceTable.columnAtPoint(e.getPoint());
 
                     if (!apiResourceTable.isRowSelected(row)) {
                         apiResourceTable.changeSelection(row, column, false, false);
@@ -216,7 +212,7 @@ public class KubemmanderToolWindow {
 
         JPanel topToolBar = new JPanel(new BorderLayout());
         toolBars.add(topToolBar, BorderLayout.NORTH);
-        
+
         JPanel topLeftToolBar = new JPanel(new FlowLayout(FlowLayout.LEFT));
         topToolBar.add(topLeftToolBar, BorderLayout.WEST);
 
@@ -274,7 +270,7 @@ public class KubemmanderToolWindow {
         namespaceComboBox.setMinimumAndPreferredWidth(300);
         topRightToolBar.add(namespaceComboBox);
 
-        JPanel bottomToolBar= new JPanel(new BorderLayout());
+        JPanel bottomToolBar = new JPanel(new BorderLayout());
         toolBars.add(bottomToolBar, BorderLayout.SOUTH);
         bottomToolBar.add(new JSeparator(), BorderLayout.SOUTH);
 
@@ -325,6 +321,29 @@ public class KubemmanderToolWindow {
         connectToCluster(null);
     }
 
+    private void executeApiResourceActions(ActionEvent actionEvent, String operation, Project project) {
+        if (actionEvent.getSource() instanceof JMenuItem menuItem) {
+            JPopupMenu popup = (JPopupMenu) menuItem.getParent();
+            if (popup.getInvoker() instanceof JTable table) {
+                int selectedRow = table.getSelectedRow();
+                if (selectedRow >= 0) {
+                    ApplicationManager.getApplication().invokeLater(() -> {
+                        ApplicationManager.getApplication().runReadAction(() -> {
+                            Object valueOfZeroColumn = table.getValueAt(selectedRow, 0);
+                            if (operation.equals("explain")) {
+                                if (valueOfZeroColumn instanceof APIResource apiResource) {
+                                    KubemmanderExplain.explain(apiResource.getName());
+                                } else if (valueOfZeroColumn instanceof String stringValueOfSixthColumn) {
+                                    KubemmanderExplain.explain(stringValueOfSixthColumn);
+                                }
+                            }
+                        });
+                    });
+                }
+            }
+        }
+    }
+
     private void execute(ActionEvent actionEvent, String operation, Project project) {
         if (actionEvent.getSource() instanceof JMenuItem menuItem) {
             JPopupMenu popup = (JPopupMenu) menuItem.getParent();
@@ -332,100 +351,97 @@ public class KubemmanderToolWindow {
                 int selectedRow = table.getSelectedRow();
                 if (selectedRow >= 0) {
                     ApplicationManager.getApplication().invokeLater(() -> {
-                        ApplicationManager.getApplication().runWriteAction(() -> {
-                            ApplicationManager.getApplication().runReadAction(() -> {
-                                Object valueOfZeroColumn = table.getValueAt(selectedRow, 0);
-                                if (operation.equals("explain")) {
-                                    Object valueOfSixthColumn = table.getValueAt(selectedRow, 6);
-                                    if (valueOfSixthColumn instanceof APIResource apiResource) {
-                                        KubemmanderExplain.explain(apiResource.getName());
-                                    } else if (valueOfSixthColumn instanceof String stringValueOfSixthColumn) {
-                                        KubemmanderExplain.explain(stringValueOfSixthColumn);
-                                    }
-                                    return;
+                        ApplicationManager.getApplication().runReadAction(() -> {
+                            Object valueOfZeroColumn = table.getValueAt(selectedRow, 0);
+                            if (operation.equals("explain")) {
+                                Object valueOfSixthColumn = table.getValueAt(selectedRow, 6);
+                                if (valueOfSixthColumn instanceof APIResource apiResource) {
+                                    KubemmanderExplain.explain(apiResource.getName());
+                                } else if (valueOfSixthColumn instanceof String stringValueOfSixthColumn) {
+                                    KubemmanderExplain.explain(stringValueOfSixthColumn);
                                 }
-                                if (valueOfZeroColumn instanceof GenericKubernetesResource genericKubernetesResource) {
-                                    APIResource apiResource = (APIResource) table.getValueAt(selectedRow, 6);
-                                    if (operation.equals("load")) {
-                                        List<String> kubectlCommand = new LinkedList<>();
-                                        kubectlCommand.add("kubectl");
-                                        kubectlCommand.add("get");
-                                        kubectlCommand.add("-o");
-                                        kubectlCommand.add("yaml");
-                                        if (apiResource.getNamespaced()) {
-                                            kubectlCommand.add("-n");
-                                            kubectlCommand.add(genericKubernetesResource.getMetadata().getNamespace());
-                                        }
-                                        kubectlCommand.add(apiResource.getKind());
-                                        kubectlCommand.add(genericKubernetesResource.getMetadata().getName());
+                                return;
+                            }
+                            if (valueOfZeroColumn instanceof GenericKubernetesResource genericKubernetesResource) {
+                                APIResource apiResource = (APIResource) table.getValueAt(selectedRow, 6);
+                                if (operation.equals("load")) {
+                                    List<String> kubectlCommand = new LinkedList<>();
+                                    kubectlCommand.add("kubectl");
+                                    kubectlCommand.add("get");
+                                    kubectlCommand.add("-o");
+                                    kubectlCommand.add("yaml");
+                                    if (apiResource.getNamespaced()) {
+                                        kubectlCommand.add("-n");
+                                        kubectlCommand.add(genericKubernetesResource.getMetadata().getNamespace());
+                                    }
+                                    kubectlCommand.add(apiResource.getKind());
+                                    kubectlCommand.add(genericKubernetesResource.getMetadata().getName());
 
-                                        ProcessBuilder kubectlProcessBuilder = new ProcessBuilder(kubectlCommand);
-                                        kubectlProcessBuilder.redirectErrorStream(true);
+                                    ProcessBuilder kubectlProcessBuilder = new ProcessBuilder(kubectlCommand);
+                                    kubectlProcessBuilder.redirectErrorStream(true);
 
-                                        new Thread(() -> {
-                                            try {
-                                                Process kubectlProcess = kubectlProcessBuilder.start();
-                                                String[] kubectlProcessOutput = new String[1];
-                                                new Thread(() -> {
-                                                    try {
-                                                        kubectlProcessOutput[0] = IOUtils.toString(kubectlProcess.getInputStream(), StandardCharsets.UTF_8);
-                                                    } catch (IOException ignore) {
-                                                    }
-                                                }).start();
-                                                int exitCode = kubectlProcess.waitFor();
-                                                if (exitCode == 0) {
-                                                    ApplicationManager.getApplication().invokeLater(() -> {
-                                                        FileType  fileType = PlainTextFileType.INSTANCE;
-
-                                                        VirtualFile file = VfsUtil.findFileByIoFile(new File("/path/to/file"), true);
-
-                                                        LightVirtualFile lightVirtualFile = new LightVirtualFile(
-                                                                apiResource.getKind() + "-" + genericKubernetesResource.getMetadata().getName() + ".yaml"
-                                                                ,fileType
-                                                                ,"# " +kubectlCommand.stream().collect(Collectors.joining(" ")) + "\n" + kubectlProcessOutput[0]);
-                                                        lightVirtualFile.setWritable(false);
-                                                        // Figure out a way to set language for syntax highlighting based on file extension
-                                                        lightVirtualFile.setLanguage(PlainTextLanguage.INSTANCE);
-                                                        FileEditorManager.getInstance(project).openFile(lightVirtualFile, true);
-                                                        FileEditorManager.getInstance(project).openFile(lightVirtualFile, true);
-                                                    });
-                                                } else {
-                                                    // Show error dialog
-                                                    kubemmanderNotificationGroup.createNotification(
-                                                                    kubectlCommand.stream().collect(Collectors.joining(" ")) + " failed with exit code " + exitCode
-                                                                    ,NotificationType.ERROR)
-                                                            .notify(project);
-                                                }
-                                            } catch (IOException | InterruptedException ignore) {
-                                            }
-                                        }).start();
-                                    } else {
-                                        @NotNull ShellTerminalWidget shellTerminalWidget =
-                                                TerminalToolWindowManager
-                                                        .getInstance(Objects.requireNonNull(project))
-                                                        .createLocalShellWidget(project.getBasePath(), "kubectl", true, true);
+                                    new Thread(() -> {
                                         try {
-                                            shellTerminalWidget.executeCommand(
-                                                    "kubectl "
-                                                    + ("get".equals(operation) ? "-o wide " : "")
-                                                    + (apiResource.getNamespaced() ? "-n " + genericKubernetesResource.getMetadata().getNamespace() + " " : "")
-                                                    + operation
-                                                    + " "
-                                                    + apiResource.getKind()
-                                                    + " "
-                                                    + genericKubernetesResource.getMetadata().getName());
-                                        } catch (IOException exception) {
-                                            // Show error dialog
-                                            kubemmanderNotificationGroup
-                                                    .createNotification(
-                                                            exception.getMessage()
-                                                            ,NotificationType.ERROR)
-                                                    .notify(project);
+                                            Process kubectlProcess = kubectlProcessBuilder.start();
+                                            String[] kubectlProcessOutput = new String[1];
+                                            new Thread(() -> {
+                                                try {
+                                                    kubectlProcessOutput[0] = IOUtils.toString(kubectlProcess.getInputStream(), StandardCharsets.UTF_8);
+                                                } catch (IOException ignore) {
+                                                }
+                                            }).start();
+                                            int exitCode = kubectlProcess.waitFor();
+                                            if (exitCode == 0) {
+                                                ApplicationManager.getApplication().invokeLater(() -> {
+                                                    FileType  fileType = PlainTextFileType.INSTANCE;
+
+                                                    VirtualFile file = VfsUtil.findFileByIoFile(new File("/path/to/file"), true);
+
+                                                    LightVirtualFile lightVirtualFile = new LightVirtualFile(
+                                                            apiResource.getKind() + "-" + genericKubernetesResource.getMetadata().getName() + ".yaml"
+                                                            ,fileType
+                                                            ,"# " +kubectlCommand.stream().collect(Collectors.joining(" ")) + "\n" + kubectlProcessOutput[0]);
+                                                    lightVirtualFile.setWritable(false);
+                                                    // Figure out a way to set language for syntax highlighting based on file extension
+                                                    lightVirtualFile.setLanguage(PlainTextLanguage.INSTANCE);
+                                                    FileEditorManager.getInstance(project).openFile(lightVirtualFile, true);
+                                                    FileEditorManager.getInstance(project).openFile(lightVirtualFile, true);
+                                                });
+                                            } else {
+                                                // Show error dialog
+                                                kubemmanderNotificationGroup.createNotification(
+                                                                kubectlCommand.stream().collect(Collectors.joining(" ")) + " failed with exit code " + exitCode
+                                                                ,NotificationType.ERROR)
+                                                        .notify(project);
+                                            }
+                                        } catch (IOException | InterruptedException ignore) {
                                         }
+                                    }).start();
+                                } else {
+                                    @NotNull ShellTerminalWidget shellTerminalWidget =
+                                            TerminalToolWindowManager
+                                                    .getInstance(Objects.requireNonNull(project))
+                                                    .createLocalShellWidget(project.getBasePath(), "kubectl", true, true);
+                                    try {
+                                        shellTerminalWidget.executeCommand(
+                                                "kubectl "
+                                                + ("get".equals(operation) ? "-o wide " : "")
+                                                + (apiResource.getNamespaced() ? "-n " + genericKubernetesResource.getMetadata().getNamespace() + " " : "")
+                                                + operation
+                                                + " "
+                                                + apiResource.getKind()
+                                                + " "
+                                                + genericKubernetesResource.getMetadata().getName());
+                                    } catch (IOException exception) {
+                                        // Show error dialog
+                                        kubemmanderNotificationGroup
+                                                .createNotification(
+                                                        exception.getMessage()
+                                                        ,NotificationType.ERROR)
+                                                .notify(project);
                                     }
                                 }
-
-                            });
+                            }
                         });
                     });
                 }
@@ -437,8 +453,7 @@ public class KubemmanderToolWindow {
         File kubeconfigFile = new File(kubeconfigTextField.getText().replace("~", System.getProperty("user.home")));
         if (kubeconfigFile.isFile()) {
             ApplicationManager.getApplication().invokeLater(() -> {
-                ApplicationManager.getApplication().runWriteAction(() -> {
-                    ApplicationManager.getApplication().runReadAction(() -> {
+                ApplicationManager.getApplication().runReadAction(() -> {
                         try {
                             VirtualFile kubeconfigVirtualFile = VfsUtil.findFileByIoFile(kubeconfigFile, true);
                             if (kubeconfigVirtualFile != null) {
@@ -447,7 +462,6 @@ public class KubemmanderToolWindow {
                         } catch (Throwable ignore) {
                         }
                     });
-                });
             });
         }
     }
