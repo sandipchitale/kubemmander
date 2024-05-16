@@ -132,14 +132,25 @@ public class KubemmanderToolWindow {
         column.setWidth(0);
         column.setMaxWidth(0);
 
-        JPopupMenu popup = new JPopupMenu();
+
+
+        JPopupMenu apiResourcePopupMenu = new JPopupMenu();
+        JMenuItem explainApiResourceMenuItem = new JMenuItem("Explain");
+        explainApiResourceMenuItem.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent actionEvent) {
+//                executeApiResource(actionEvent, "explain", project);
+            }
+        });
+        apiResourcePopupMenu.add(explainApiResourceMenuItem);
+
+        JPopupMenu resourcePopupMenu = new JPopupMenu();
         JMenuItem getMenuItem = new JMenuItem("Get");
         getMenuItem.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent actionEvent) {
                 execute(actionEvent, "get", project);
             }
         });
-        popup.add(getMenuItem );
+        resourcePopupMenu.add(getMenuItem);
 
         JMenuItem describeMenuItem = new JMenuItem("Describe");
         describeMenuItem.addActionListener(new ActionListener() {
@@ -147,9 +158,9 @@ public class KubemmanderToolWindow {
                 execute(actionEvent, "describe", project);
             }
         });
-        popup.add(describeMenuItem );
+        resourcePopupMenu.add(describeMenuItem);
 
-        popup.add(new JSeparator());
+        resourcePopupMenu.add(new JSeparator());
 
         JMenuItem loadMenuItem = new JMenuItem("Load");
         loadMenuItem.addActionListener(new ActionListener() {
@@ -157,9 +168,9 @@ public class KubemmanderToolWindow {
                 execute(actionEvent, "load", project);
             }
         });
-        popup.add(loadMenuItem );
+        resourcePopupMenu.add(loadMenuItem );
 
-        popup.add(new JSeparator());
+        resourcePopupMenu.add(new JSeparator());
 
         JMenuItem explainMenuItem = new JMenuItem("Explain");
         explainMenuItem.addActionListener(new ActionListener() {
@@ -167,7 +178,7 @@ public class KubemmanderToolWindow {
                 execute(actionEvent, "explain", project);
             }
         });
-        popup.add(explainMenuItem );
+        resourcePopupMenu.add(explainMenuItem );
 
 
         apiResourceTable.addMouseListener(new MouseAdapter()
@@ -184,14 +195,19 @@ public class KubemmanderToolWindow {
 
             private void showPopup(MouseEvent e) {
                 if (e.isPopupTrigger()) {
-                    JTable source = (JTable)e.getSource();
-                    int row = source.rowAtPoint( e.getPoint() );
-                    int column = source.columnAtPoint( e.getPoint() );
+                    JTable apiResourceTable = (JTable)e.getSource();
+                    int row = apiResourceTable.rowAtPoint( e.getPoint() );
+                    int column = apiResourceTable.columnAtPoint( e.getPoint() );
 
-                    if (! source.isRowSelected(row))
-                        source.changeSelection(row, column, false, false);
-
-                    popup.show(e.getComponent(), e.getX(), e.getY());
+                    if (!apiResourceTable.isRowSelected(row)) {
+                        apiResourceTable.changeSelection(row, column, false, false);
+                    }
+                    Object valueOfZeroColumn = apiResourceTable.getValueAt(row, 0);
+                    if (valueOfZeroColumn instanceof APIResource || valueOfZeroColumn instanceof String) {
+                        apiResourcePopupMenu.show(e.getComponent(), e.getX(), e.getY());
+                    } else if (valueOfZeroColumn instanceof GenericKubernetesResource) {
+                        resourcePopupMenu.show(e.getComponent(), e.getX(), e.getY());
+                    }
                 }
             }
         });
