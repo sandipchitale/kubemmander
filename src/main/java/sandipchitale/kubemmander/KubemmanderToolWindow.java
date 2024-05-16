@@ -134,13 +134,24 @@ public class KubemmanderToolWindow {
 
 
         JPopupMenu apiResourcePopupMenu = new JPopupMenu();
-        JMenuItem explainApiResourceMenuItem = new JMenuItem("Explain");
-        explainApiResourceMenuItem.addActionListener(new ActionListener() {
+
+        JMenuItem loadApiResourceMenuItem = new JMenuItem("Load");
+        loadApiResourceMenuItem.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent actionEvent) {
-                executeApiResourceActions(actionEvent, "explain", project);
+                executeApiResourceActions(actionEvent, "load", project);
             }
         });
-        apiResourcePopupMenu.add(explainApiResourceMenuItem);
+        apiResourcePopupMenu.add(loadApiResourceMenuItem);
+
+        apiResourcePopupMenu.add(new JSeparator());
+
+        JMenuItem documentationApiResourceMenuItem = new JMenuItem("Documentation");
+        documentationApiResourceMenuItem.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent actionEvent) {
+                executeApiResourceActions(actionEvent, "documentation", project);
+            }
+        });
+        apiResourcePopupMenu.add(documentationApiResourceMenuItem);
 
         JPopupMenu resourcePopupMenu = new JPopupMenu();
         JMenuItem getMenuItem = new JMenuItem("Get");
@@ -330,11 +341,62 @@ public class KubemmanderToolWindow {
                     ApplicationManager.getApplication().invokeLater(() -> {
                         ApplicationManager.getApplication().runReadAction(() -> {
                             Object valueOfZeroColumn = table.getValueAt(selectedRow, 0);
-                            if (operation.equals("explain")) {
+                            if (operation.equals("documentation")) {
                                 if (valueOfZeroColumn instanceof APIResource apiResource) {
                                     KubemmanderExplain.explain(apiResource.getName());
                                 } else if (valueOfZeroColumn instanceof String stringValueOfSixthColumn) {
                                     KubemmanderExplain.explain(stringValueOfSixthColumn);
+                                }
+                            } else {
+                                if (operation.equals("load")) {
+                                    if (valueOfZeroColumn instanceof APIResource apiResource) {
+                                        List<String> kubectlCommand = new LinkedList<>();
+                                        kubectlCommand.add("kubectl");
+                                        kubectlCommand.add("explain");
+                                        kubectlCommand.add(apiResource.getName());
+//                                        kubectlCommand.add("--api-version=" + apiResource.getVersion());
+                                        kubectlCommand.add("--recursive=true");
+                                        ProcessBuilder kubectlProcessBuilder = new ProcessBuilder(kubectlCommand);
+                                        kubectlProcessBuilder.redirectErrorStream(true);
+                                        new Thread(() -> {
+                                            try {
+                                                Process kubectlProcess = kubectlProcessBuilder.start();
+                                                String[] kubectlProcessOutput = new String[1];
+                                                new Thread(() -> {
+                                                    try {
+                                                        kubectlProcessOutput[0] = IOUtils.toString(kubectlProcess.getInputStream(), StandardCharsets.UTF_8);
+                                                    } catch (IOException ignore) {
+                                                    }
+                                                }).start();
+                                                int exitCode = kubectlProcess.waitFor();
+                                                if (exitCode == 0) {
+                                                    ApplicationManager.getApplication().invokeLater(() -> {
+                                                        FileType  fileType = PlainTextFileType.INSTANCE;
+
+                                                        VirtualFile file = VfsUtil.findFileByIoFile(new File("/path/to/file"), true);
+
+                                                        LightVirtualFile lightVirtualFile = new LightVirtualFile(
+                                                                apiResource.getName() + ".yaml"
+                                                                ,fileType
+                                                                ,"# " + kubectlCommand.stream().collect(Collectors.joining(" ")) + "\n" + kubectlProcessOutput[0]);
+                                                        lightVirtualFile.setWritable(false);
+                                                        // Figure out a way to set language for syntax highlighting based on file extension
+                                                        lightVirtualFile.setLanguage(PlainTextLanguage.INSTANCE);
+                                                        FileEditorManager.getInstance(project).openFile(lightVirtualFile, true);
+                                                        FileEditorManager.getInstance(project).openFile(lightVirtualFile, true);
+                                                    });
+                                                } else {
+                                                    // Show error dialog
+                                                    kubemmanderNotificationGroup.createNotification(
+                                                                    kubectlCommand.stream().collect(Collectors.joining(" ")) + " failed with exit code " + exitCode
+                                                                    ,NotificationType.ERROR)
+                                                            .notify(project);
+                                                }
+                                            } catch (IOException | InterruptedException ignore) {
+                                            }
+                                        }).start();
+
+                                    }
                                 }
                             }
                         });
