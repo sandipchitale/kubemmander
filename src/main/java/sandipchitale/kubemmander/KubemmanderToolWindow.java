@@ -182,13 +182,13 @@ public class KubemmanderToolWindow {
 
         resourcePopupMenu.add(new JSeparator());
 
-        JMenuItem explainMenuItem = new JMenuItem("Explain");
-        explainMenuItem.addActionListener(new ActionListener() {
+        JMenuItem documentationMenuItem = new JMenuItem("Documentation");
+        documentationMenuItem.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent actionEvent) {
-                execute(actionEvent, "explain", project);
+                execute(actionEvent, "documentation", project);
             }
         });
-        resourcePopupMenu.add(explainMenuItem);
+        resourcePopupMenu.add(documentationMenuItem);
 
 
         apiResourceTable.addMouseListener(new MouseAdapter() {
@@ -415,7 +415,7 @@ public class KubemmanderToolWindow {
                     ApplicationManager.getApplication().invokeLater(() -> {
                         ApplicationManager.getApplication().runReadAction(() -> {
                             Object valueOfZeroColumn = table.getValueAt(selectedRow, 0);
-                            if (operation.equals("explain")) {
+                            if (operation.equals("documentation")) {
                                 Object valueOfSixthColumn = table.getValueAt(selectedRow, 6);
                                 if (valueOfSixthColumn instanceof APIResource apiResource) {
                                     KubemmanderExplain.explain(apiResource.getName());
