@@ -25,12 +25,13 @@
     <change-notes><![CDATA[
 <h2>New Features</h2>
 <ul>
+    <li>Include instances checkbox</li>
     <li>Support connect, disconnect, reconnect action.</li>
-    <li>Wait cursor.</li>
+    <li>Wait cursor</li>
     <li>Get command</li>
     <li>Describe command</li>
     <li>Load command (get -o yaml)</li>
-    <li>Explain command</li>
+    <li>Documentation command</li>
 </ul>
 <h2>Known Issues</h2>
 <ul>
