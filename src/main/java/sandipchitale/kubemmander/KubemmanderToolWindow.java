@@ -225,6 +225,7 @@ public class KubemmanderToolWindow {
 
         JPanel topToolBar = new JPanel(new BorderLayout());
         toolBars.add(topToolBar, BorderLayout.NORTH);
+        topToolBar.add(new JSeparator(), BorderLayout.SOUTH);
 
         JPanel topLeftToolBar = new JPanel(new FlowLayout(FlowLayout.LEFT));
         topToolBar.add(topLeftToolBar, BorderLayout.WEST);
@@ -248,23 +249,10 @@ public class KubemmanderToolWindow {
         connectToClusterButton.addActionListener(this::connectToCluster);
         topLeftToolBar.add(connectToClusterButton);
 
-        reconnectToCusterButton = new JButton(AllIcons.Actions.Refresh);
-        reconnectToCusterButton.setToolTipText("Reconnect to Cluster - selected namespace will be used to filter resources");
-        reconnectToCusterButton.addActionListener((ActionEvent actionEvent) -> {
-            disconnectFromCluster(actionEvent, true);
-        });
-        topLeftToolBar.add(reconnectToCusterButton);
-
         disconnectFromCusterButton = new JButton(AllIcons.Actions.Exit);
         disconnectFromCusterButton.setToolTipText("Disconnect from Cluster");
         disconnectFromCusterButton.addActionListener(this::disconnectFromCluster);
         topLeftToolBar.add(disconnectFromCusterButton);
-
-        JLabel serverVersionLabel = new JLabel("Server version: ");
-        topLeftToolBar.add(serverVersionLabel);
-
-        serverVersion = new JLabel("");
-        topLeftToolBar.add(serverVersion);
 
         JPanel topRightToolBar = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         topToolBar.add(topRightToolBar, BorderLayout.EAST);
@@ -274,6 +262,12 @@ public class KubemmanderToolWindow {
         loadingResourcesLabel = new JLabel("Loading resources...");
         topRightToolBar.add(loadingResourcesLabel);
         loadingResourcesLabel.setVisible(false);
+
+        JLabel serverVersionLabel = new JLabel("Server version: ");
+        topRightToolBar.add(serverVersionLabel);
+
+        serverVersion = new JLabel("    ");
+        topRightToolBar.add(serverVersion);
 
         JLabel contextLabel = new JLabel("Context: ");
         topRightToolBar.add(contextLabel);
@@ -293,42 +287,49 @@ public class KubemmanderToolWindow {
         toolBars.add(bottomToolBar, BorderLayout.SOUTH);
         bottomToolBar.add(new JSeparator(), BorderLayout.SOUTH);
 
-        JPanel bottomLeftToolBar = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        JPanel bottomLeftToolBar = new JPanel(new FlowLayout(FlowLayout.LEFT));
         bottomToolBar.add(bottomLeftToolBar, BorderLayout.WEST);
 
-        JPanel bottomRightToolBar = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        bottomToolBar.add(bottomRightToolBar, BorderLayout.EAST);
-
         JLabel includeLabel = new JLabel("Include: ");
-        bottomRightToolBar.add(includeLabel);
+        bottomLeftToolBar.add(includeLabel);
 
         includeInstancesCheckBox = new JCheckBox("Instances");
         includeInstancesCheckBox.setSelected(false);
-        bottomRightToolBar.add(includeInstancesCheckBox);
+        bottomLeftToolBar.add(includeInstancesCheckBox);
 
         includeNonNamespacedCheckBox = new JCheckBox("Non Namespaced");
         includeNonNamespacedCheckBox.setSelected(true);
-        bottomRightToolBar.add(includeNonNamespacedCheckBox);
+        bottomLeftToolBar.add(includeNonNamespacedCheckBox);
 
-        bottomRightToolBar.add(new JLabel(" | "));
+        bottomLeftToolBar.add(new JLabel(" | "));
 
         includeNamespacedCheckBox = new JCheckBox("Namespaced");
         includeNamespacedCheckBox.setSelected(true);
-        bottomRightToolBar.add(includeNamespacedCheckBox);
+        bottomLeftToolBar.add(includeNamespacedCheckBox);
 
         JLabel fromLabel = new JLabel("resources from namespaces:");
-        bottomRightToolBar.add(fromLabel);
+        bottomLeftToolBar.add(fromLabel);
 
         allNamespacesCheckBox = new JCheckBox("All");
         allNamespacesCheckBox.setSelected(true);
-        bottomRightToolBar.add(allNamespacesCheckBox);
+        bottomLeftToolBar.add(allNamespacesCheckBox);
 
         JLabel allOrSelectedNamespacesLabel = new JLabel("| Selected:");
-        bottomRightToolBar.add(allOrSelectedNamespacesLabel);
+        bottomLeftToolBar.add(allOrSelectedNamespacesLabel);
 
         selectedNamespacesComboBox = new ComboBox<>();
         selectedNamespacesComboBox.setMinimumAndPreferredWidth(200);
-        bottomRightToolBar.add(selectedNamespacesComboBox);
+        bottomLeftToolBar.add(selectedNamespacesComboBox);
+
+        reconnectToCusterButton = new JButton(AllIcons.Actions.Refresh);
+        reconnectToCusterButton.setToolTipText("Reconnect to Cluster - selected namespace will be used to filter resources");
+        reconnectToCusterButton.addActionListener((ActionEvent actionEvent) -> {
+            disconnectFromCluster(actionEvent, true);
+        });
+        bottomLeftToolBar.add(reconnectToCusterButton);
+
+        JPanel bottomRightToolBar = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        bottomToolBar.add(bottomRightToolBar, BorderLayout.EAST);
 
         allNamespacesCheckBox.addActionListener(this::adjustSelectedNamespacesComboBoxState);
         adjustSelectedNamespacesComboBoxState(null);
