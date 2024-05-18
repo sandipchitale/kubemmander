@@ -254,34 +254,55 @@ public class KubemmanderToolWindow {
         disconnectFromCusterButton.addActionListener(this::disconnectFromCluster);
         topLeftToolBar.add(disconnectFromCusterButton);
 
+        loadingResourcesLabel = new JLabel("Loading resources...");
+        topLeftToolBar.add(loadingResourcesLabel);
+        loadingResourcesLabel.setVisible(false);
+
         JPanel topRightToolBar = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         topToolBar.add(topRightToolBar, BorderLayout.EAST);
 
         topRightToolBar.setBorder(BorderFactory.createEmptyBorder(2, 0, 2, 2));
 
-        loadingResourcesLabel = new JLabel("Loading resources...");
-        topRightToolBar.add(loadingResourcesLabel);
-        loadingResourcesLabel.setVisible(false);
+        reconnectToCusterButton = new JButton(AllIcons.Actions.Refresh);
+        reconnectToCusterButton.setToolTipText("Reconnect to Cluster - selected namespace will be used to filter resources");
+        reconnectToCusterButton.addActionListener((ActionEvent actionEvent) -> {
+            disconnectFromCluster(actionEvent, true);
+        });
+        topRightToolBar.add(reconnectToCusterButton);
 
-        JLabel serverVersionLabel = new JLabel("Server version: ");
-        topRightToolBar.add(serverVersionLabel);
+        JLabel includeLabel = new JLabel("Include: ");
+        topRightToolBar.add(includeLabel);
 
-        serverVersion = new JLabel("    ");
-        topRightToolBar.add(serverVersion);
+        includeInstancesCheckBox = new JCheckBox("Instances");
+        includeInstancesCheckBox.setSelected(false);
+        topRightToolBar.add(includeInstancesCheckBox);
 
-        JLabel contextLabel = new JLabel("Context: ");
-        topRightToolBar.add(contextLabel);
+        includeNonNamespacedCheckBox = new JCheckBox("Non Namespaced");
+        includeNonNamespacedCheckBox.setSelected(true);
+        topRightToolBar.add(includeNonNamespacedCheckBox);
 
-        contextComboBox = new ComboBox<>(new DefaultComboBoxModel<>());
-        contextComboBox.setMinimumAndPreferredWidth(200);
-        topRightToolBar.add(contextComboBox);
+        topRightToolBar.add(new JLabel(" | "));
 
-        JLabel namespaceLabel = new JLabel("Namespace: ");
-        topRightToolBar.add(namespaceLabel);
+        includeNamespacedCheckBox = new JCheckBox("Namespaced");
+        includeNamespacedCheckBox.setSelected(true);
+        topRightToolBar.add(includeNamespacedCheckBox);
 
-        namespaceComboBox = new ComboBox<>(new DefaultComboBoxModel<>());
-        namespaceComboBox.setMinimumAndPreferredWidth(200);
-        topRightToolBar.add(namespaceComboBox);
+        JLabel fromLabel = new JLabel("resources from namespaces:");
+        topRightToolBar.add(fromLabel);
+
+        allNamespacesCheckBox = new JCheckBox("All");
+        allNamespacesCheckBox.setSelected(true);
+        topRightToolBar.add(allNamespacesCheckBox);
+
+        JLabel allOrSelectedNamespacesLabel = new JLabel("| Selected:");
+        topRightToolBar.add(allOrSelectedNamespacesLabel);
+
+        selectedNamespacesComboBox = new ComboBox<>();
+        selectedNamespacesComboBox.setMinimumAndPreferredWidth(200);
+        topRightToolBar.add(selectedNamespacesComboBox);
+
+        allNamespacesCheckBox.addActionListener(this::adjustSelectedNamespacesComboBoxState);
+        adjustSelectedNamespacesComboBoxState(null);
 
         JPanel bottomToolBar = new JPanel(new BorderLayout());
         toolBars.add(bottomToolBar, BorderLayout.SOUTH);
@@ -290,49 +311,28 @@ public class KubemmanderToolWindow {
         JPanel bottomLeftToolBar = new JPanel(new FlowLayout(FlowLayout.LEFT));
         bottomToolBar.add(bottomLeftToolBar, BorderLayout.WEST);
 
-        JLabel includeLabel = new JLabel("Include: ");
-        bottomLeftToolBar.add(includeLabel);
-
-        includeInstancesCheckBox = new JCheckBox("Instances");
-        includeInstancesCheckBox.setSelected(false);
-        bottomLeftToolBar.add(includeInstancesCheckBox);
-
-        includeNonNamespacedCheckBox = new JCheckBox("Non Namespaced");
-        includeNonNamespacedCheckBox.setSelected(true);
-        bottomLeftToolBar.add(includeNonNamespacedCheckBox);
-
-        bottomLeftToolBar.add(new JLabel(" | "));
-
-        includeNamespacedCheckBox = new JCheckBox("Namespaced");
-        includeNamespacedCheckBox.setSelected(true);
-        bottomLeftToolBar.add(includeNamespacedCheckBox);
-
-        JLabel fromLabel = new JLabel("resources from namespaces:");
-        bottomLeftToolBar.add(fromLabel);
-
-        allNamespacesCheckBox = new JCheckBox("All");
-        allNamespacesCheckBox.setSelected(true);
-        bottomLeftToolBar.add(allNamespacesCheckBox);
-
-        JLabel allOrSelectedNamespacesLabel = new JLabel("| Selected:");
-        bottomLeftToolBar.add(allOrSelectedNamespacesLabel);
-
-        selectedNamespacesComboBox = new ComboBox<>();
-        selectedNamespacesComboBox.setMinimumAndPreferredWidth(200);
-        bottomLeftToolBar.add(selectedNamespacesComboBox);
-
-        reconnectToCusterButton = new JButton(AllIcons.Actions.Refresh);
-        reconnectToCusterButton.setToolTipText("Reconnect to Cluster - selected namespace will be used to filter resources");
-        reconnectToCusterButton.addActionListener((ActionEvent actionEvent) -> {
-            disconnectFromCluster(actionEvent, true);
-        });
-        bottomLeftToolBar.add(reconnectToCusterButton);
-
-        JPanel bottomRightToolBar = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        JPanel bottomRightToolBar = new JPanel(new FlowLayout(FlowLayout.LEFT));
         bottomToolBar.add(bottomRightToolBar, BorderLayout.EAST);
 
-        allNamespacesCheckBox.addActionListener(this::adjustSelectedNamespacesComboBoxState);
-        adjustSelectedNamespacesComboBoxState(null);
+        JLabel serverVersionLabel = new JLabel("Server version: ");
+        bottomRightToolBar.add(serverVersionLabel);
+
+        serverVersion = new JLabel("0000");
+        bottomRightToolBar.add(serverVersion);
+
+        JLabel contextLabel = new JLabel("Context: ");
+        bottomRightToolBar.add(contextLabel);
+
+        contextComboBox = new ComboBox<>(new DefaultComboBoxModel<>());
+        contextComboBox.setMinimumAndPreferredWidth(200);
+        bottomRightToolBar.add(contextComboBox);
+
+        JLabel namespaceLabel = new JLabel("Namespace: ");
+        bottomRightToolBar.add(namespaceLabel);
+
+        namespaceComboBox = new ComboBox<>(new DefaultComboBoxModel<>());
+        namespaceComboBox.setMinimumAndPreferredWidth(200);
+        bottomRightToolBar.add(namespaceComboBox);
 
         this.contentToolWindow.add(toolBars, BorderLayout.NORTH);
 
@@ -698,7 +698,7 @@ public class KubemmanderToolWindow {
     private void adjustStates() {
         connectToClusterButton.setVisible(kubernetesClient == null);
         disconnectFromCusterButton.setVisible(kubernetesClient != null);
-        reconnectToCusterButton.setVisible(kubernetesClient != null);
+        reconnectToCusterButton.setEnabled(kubernetesClient != null);
         contextComboBox.setEnabled(kubernetesClient != null);
         namespaceComboBox.setEnabled(kubernetesClient != null);
         allNamespacesCheckBox.setEnabled(kubernetesClient != null);
