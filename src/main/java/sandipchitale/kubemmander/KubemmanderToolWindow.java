@@ -42,6 +42,8 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class KubemmanderToolWindow {
@@ -74,6 +76,8 @@ public class KubemmanderToolWindow {
     private KubernetesClient kubernetesClient = null;
 
     private String selectedNamespace = null;
+
+    private Pattern HELM_SECRET_NAME_PATTERN = Pattern.compile("sh\\.helm\\.release\\.v\\d+\\.(.*).v(\\d)+");
 
     public KubemmanderToolWindow(Project project) {
         this.contentToolWindow = new SimpleToolWindowPanel(true, true);
@@ -134,7 +138,6 @@ public class KubemmanderToolWindow {
         column.setWidth(0);
         column.setMaxWidth(0);
 
-
         JPopupMenu apiResourcePopupMenu = new JPopupMenu();
 
         JMenuItem loadApiResourceMenuItem = new JMenuItem("Load");
@@ -192,7 +195,6 @@ public class KubemmanderToolWindow {
         });
         resourcePopupMenu.add(documentationMenuItem);
 
-
         apiResourceTable.addMouseListener(new MouseAdapter() {
             public void mousePressed(MouseEvent e) {
                 showPopup(e);
@@ -212,8 +214,11 @@ public class KubemmanderToolWindow {
                         apiResourceTable.changeSelection(row, column, false, false);
                     }
                     Object valueOfZeroColumn = apiResourceTable.getValueAt(row, 0);
+                    Object valueOfZeroSix = apiResourceTable.getValueAt(row, 6);
                     if (valueOfZeroColumn instanceof APIResource || valueOfZeroColumn instanceof String) {
-                        apiResourcePopupMenu.show(e.getComponent(), e.getX(), e.getY());
+                        if (!(valueOfZeroSix instanceof Secret)) {
+                            apiResourcePopupMenu.show(e.getComponent(), e.getX(), e.getY());
+                        }
                     } else if (valueOfZeroColumn instanceof GenericKubernetesResource) {
                         resourcePopupMenu.show(e.getComponent(), e.getX(), e.getY());
                     }
@@ -587,13 +592,34 @@ public class KubemmanderToolWindow {
                         apiResourceTableModel.addRow(
                                 new Object[]{
                                         "helmreleases",
-                                        "rel",
+                                        "helmrels",
                                         "",
                                         "✔",
                                         "",
-                                        "helm ( release )",
+                                        "Helmreleases ( helmreleases )",
                                         "helmreleases"
                                 });
+                        // Add Helm releases
+                        if (includeInstancesCheckBox.isSelected()) {
+                            kubernetesClient.secrets().list().getItems().forEach((Secret secret) -> {
+                                String secretName = secret.getMetadata().getName();
+                                Matcher helmSecretNamematcher = HELM_SECRET_NAME_PATTERN.matcher(secretName);
+                                if (helmSecretNamematcher.matches()) {
+                                    String releaseName = helmSecretNamematcher.group(1);
+                                    String releaseRevision = helmSecretNamematcher.group(2);
+                                    apiResourceTableModel.addRow(
+                                            new Object[]{
+                                                    releaseName,
+                                                    "helmrel",
+                                                    releaseRevision,
+                                                    "✔",
+                                                    secret.getMetadata().getNamespace(),
+                                                    "Helmrelease ( helmrelease )",
+                                                    secret
+                                            });
+                                }
+                            });
+                        }
                     }
                     apiResourceSet.forEach((APIResource apiResource) -> {
                         if (apiResource.getNamespaced() && !includeNamespacedCheckBox.isSelected()) {
@@ -722,6 +748,7 @@ public class KubemmanderToolWindow {
 
         public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
             Object valueInColumnZero = table.getModel().getValueAt(row, 0);
+            Object valueInColumnOne = table.getModel().getValueAt(row, 1);
             Object valueInColumnSix = table.getModel().getValueAt(row, 6);
 
             Icon icon = null;
@@ -730,6 +757,8 @@ public class KubemmanderToolWindow {
                     icon = KubemmanderIcons.resourceTypeWithIcon.get(apiResource.getName());
                 } else if (valueInColumnSix instanceof String stringValue) {
                     icon = KubemmanderIcons.resourceTypeWithIcon.get(stringValue);
+                } else if (valueInColumnSix instanceof Secret secret && "helmrel".equals(valueInColumnOne)) {
+                    icon = KubemmanderIcons.resourceTypeWithIcon.get("helmreleases");
                 }
             }
 
@@ -751,12 +780,14 @@ public class KubemmanderToolWindow {
                     if (icon == null) {
                         if (valueInColumnZero instanceof APIResource apiResource) {
                             icon = DIRECTORY_ICON;
-                        } else if (valueInColumnZero instanceof GenericKubernetesResource) {
+                        } else if (valueInColumnZero instanceof GenericKubernetesResource || valueInColumnSix instanceof Secret) {
                             icon = FILE_ICON;
                         }
                     }
                     labelCellRendererComponent.setIcon(icon);
                     if (valueInColumnZero instanceof GenericKubernetesResource) {
+                        labelCellRendererComponent.setBorder(BorderFactory.createEmptyBorder(0, 20, 0, 0));
+                    } else if (valueInColumnSix instanceof Secret secret && "helmrel".equals(valueInColumnOne)) {
                         labelCellRendererComponent.setBorder(BorderFactory.createEmptyBorder(0, 20, 0, 0));
                     }
                 }
