@@ -140,6 +140,49 @@ public class KubemmanderToolWindow {
         column.setWidth(0);
         column.setMaxWidth(0);
 
+
+        JPopupMenu helmReleasesPopupMenu = new JPopupMenu();
+        JMenuItem helmReleasesListMenuItem = new JMenuItem("List");
+        helmReleasesListMenuItem.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent actionEvent) {
+                execute(actionEvent, "list", project);
+            }
+        });
+        helmReleasesPopupMenu.add(helmReleasesListMenuItem);
+
+        JMenuItem helmReleasesLoadMenuItem = new JMenuItem("Documentation");
+        helmReleasesLoadMenuItem.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent actionEvent) {
+                execute(actionEvent, "documentation", project);
+            }
+        });
+        helmReleasesPopupMenu.add(helmReleasesLoadMenuItem);
+
+        JPopupMenu helmReleasePopupMenu = new JPopupMenu();
+        JMenuItem helmReleaseListMenuItem = new JMenuItem("List");
+        helmReleaseListMenuItem.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent actionEvent) {
+                execute(actionEvent, "list", project);
+            }
+        });
+        helmReleasePopupMenu.add(helmReleaseListMenuItem);
+
+        JMenuItem helmReleaseHistoryMenuItem = new JMenuItem("History");
+        helmReleaseHistoryMenuItem.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent actionEvent) {
+                execute(actionEvent, "history", project);
+            }
+        });
+        helmReleasePopupMenu.add(helmReleaseHistoryMenuItem);
+
+        JMenuItem helmReleaseLoadMenuItem = new JMenuItem("Load");
+        helmReleaseLoadMenuItem.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent actionEvent) {
+                execute(actionEvent, "load", project);
+            }
+        });
+        helmReleasePopupMenu.add(helmReleaseLoadMenuItem);
+
         JPopupMenu apiResourcePopupMenu = new JPopupMenu();
 
         JMenuItem loadApiResourceMenuItem = new JMenuItem("Load");
@@ -159,23 +202,6 @@ public class KubemmanderToolWindow {
             }
         });
         apiResourcePopupMenu.add(documentationApiResourceMenuItem);
-
-        JPopupMenu helmReleasePopupMenu = new JPopupMenu();
-        JMenuItem helmReleaseListMenuItem = new JMenuItem("List");
-        helmReleaseListMenuItem.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent actionEvent) {
-                execute(actionEvent, "list", project);
-            }
-        });
-        helmReleasePopupMenu.add(helmReleaseListMenuItem);
-
-        JMenuItem helmReleaseLoadMenuItem = new JMenuItem("Load");
-        helmReleaseLoadMenuItem.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent actionEvent) {
-                execute(actionEvent, "load", project);
-            }
-        });
-        helmReleasePopupMenu.add(helmReleaseLoadMenuItem);
 
         JPopupMenu resourcePopupMenu = new JPopupMenu();
         JMenuItem getMenuItem = new JMenuItem("Get");
@@ -234,12 +260,14 @@ public class KubemmanderToolWindow {
                     }
                     Object valueOfZeroColumn = apiResourceTable.getValueAt(row, 0);
                     Object valueOfSixColumn = apiResourceTable.getValueAt(row, 6);
-                    if (valueOfSixColumn instanceof Secret) {
-                        helmReleasePopupMenu.show(e.getComponent(), e.getX(), e.getY());
-                    } if (valueOfZeroColumn instanceof APIResource || valueOfZeroColumn instanceof String) {
-                        if (!(valueOfSixColumn instanceof Secret)) {
-                            apiResourcePopupMenu.show(e.getComponent(), e.getX(), e.getY());
+                    if (valueOfZeroColumn instanceof String) {
+                        if (valueOfSixColumn instanceof Secret) {
+                            helmReleasePopupMenu.show(e.getComponent(), e.getX(), e.getY());
+                        } else {
+                            helmReleasesPopupMenu.show(e.getComponent(), e.getX(), e.getY());
                         }
+                    } else if (valueOfZeroColumn instanceof APIResource) {
+                        apiResourcePopupMenu.show(e.getComponent(), e.getX(), e.getY());
                     } else if (valueOfZeroColumn instanceof GenericKubernetesResource) {
                         resourcePopupMenu.show(e.getComponent(), e.getX(), e.getY());
                     }
@@ -428,7 +456,6 @@ public class KubemmanderToolWindow {
                                             } catch (IOException | InterruptedException ignore) {
                                             }
                                         }).start();
-
                                     }
                                 }
                             }
@@ -445,103 +472,160 @@ public class KubemmanderToolWindow {
             if (popup.getInvoker() instanceof JTable table) {
                 int selectedRow = table.getSelectedRow();
                 if (selectedRow >= 0) {
+                    Object valueOfZeroColumn = table.getValueAt(selectedRow, 0);
+                    Object valueOfSixthColumn = table.getValueAt(selectedRow, 6);
                     ApplicationManager.getApplication().invokeLater(() -> {
                         ApplicationManager.getApplication().runReadAction(() -> {
-                            Object valueOfZeroColumn = table.getValueAt(selectedRow, 0);
-                            Object valueOfSixthColumn = table.getValueAt(selectedRow, 6);
-                            if (operation.equals("documentation")) {
-                                if (valueOfSixthColumn instanceof APIResource apiResource) {
-                                    KubemmanderExplain.explain(apiResource.getName());
-                                } else if (valueOfSixthColumn instanceof String stringValueOfSixthColumn) {
-                                    KubemmanderExplain.explain(stringValueOfSixthColumn);
-                                }
-                                return;
-                            }
-                            if (valueOfSixthColumn instanceof Secret) {
-                                if (operation.equals("list")) {
-                                    // Helm release list
-                                } else if (operation.equals("load")) {
-                                    // Helm release load
-                                }
-                            } else if (valueOfZeroColumn instanceof GenericKubernetesResource genericKubernetesResource) {
-                                APIResource apiResource = (APIResource) table.getValueAt(selectedRow, 6);
-                                if (operation.equals("load")) {
-                                    List<String> kubectlCommand = new LinkedList<>();
-                                    kubectlCommand.add("kubectl");
-                                    kubectlCommand.add("get");
-                                    kubectlCommand.add("-o");
-                                    kubectlCommand.add("yaml");
-                                    if (apiResource.getNamespaced()) {
-                                        kubectlCommand.add("-n");
-                                        kubectlCommand.add(genericKubernetesResource.getMetadata().getNamespace());
-                                    }
-                                    kubectlCommand.add(apiResource.getKind());
-                                    kubectlCommand.add(genericKubernetesResource.getMetadata().getName());
-
-                                    ProcessBuilder kubectlProcessBuilder = new ProcessBuilder(kubectlCommand);
-                                    kubectlProcessBuilder.redirectErrorStream(true);
-
-                                    new Thread(() -> {
+                            switch (operation) {
+                                case "list":
+                                    if (valueOfSixthColumn instanceof Secret secret) {
+                                        // Helm release list
+                                        @NotNull ShellTerminalWidget shellTerminalWidget =
+                                                TerminalToolWindowManager
+                                                        .getInstance(Objects.requireNonNull(project))
+                                                        .createLocalShellWidget(project.getBasePath(), "helm", true, true);
                                         try {
-                                            Process kubectlProcess = kubectlProcessBuilder.start();
-                                            String[] kubectlProcessOutput = new String[1];
-                                            new Thread(() -> {
-                                                try {
-                                                    kubectlProcessOutput[0] = IOUtils.toString(kubectlProcess.getInputStream(), StandardCharsets.UTF_8);
-                                                } catch (IOException ignore) {
-                                                }
-                                            }).start();
-                                            int exitCode = kubectlProcess.waitFor();
-                                            if (exitCode == 0) {
-                                                ApplicationManager.getApplication().invokeLater(() -> {
-                                                    FileType  fileType = PlainTextFileType.INSTANCE;
-
-                                                    VirtualFile file = VfsUtil.findFileByIoFile(new File("/path/to/file"), true);
-
-                                                    LightVirtualFile lightVirtualFile = new LightVirtualFile(
-                                                            apiResource.getKind() + "-" + genericKubernetesResource.getMetadata().getName() + ".yaml"
-                                                            ,fileType
-                                                            ,"# " +kubectlCommand.stream().collect(Collectors.joining(" ")) + "\n" + kubectlProcessOutput[0]);
-                                                    lightVirtualFile.setWritable(false);
-                                                    // Figure out a way to set language for syntax highlighting based on file extension
-                                                    lightVirtualFile.setLanguage(PlainTextLanguage.INSTANCE);
-                                                    FileEditorManager.getInstance(project).openFile(lightVirtualFile, true);
-                                                    FileEditorManager.getInstance(project).openFile(lightVirtualFile, true);
-                                                });
-                                            } else {
-                                                // Show error dialog
-                                                kubemmanderNotificationGroup.createNotification(
-                                                                kubectlCommand.stream().collect(Collectors.joining(" ")) + " failed with exit code " + exitCode
-                                                                ,NotificationType.ERROR)
-                                                        .notify(project);
-                                            }
-                                        } catch (IOException | InterruptedException ignore) {
+                                            shellTerminalWidget.executeCommand(
+                                                    "helm list -n " + secret.getMetadata().getNamespace());
+                                        } catch (IOException exception) {
+                                            // Show error dialog
+                                            kubemmanderNotificationGroup
+                                                    .createNotification(
+                                                            exception.getMessage()
+                                                            ,NotificationType.ERROR)
+                                                    .notify(project);
                                         }
-                                    }).start();
-                                } else {
-                                    @NotNull ShellTerminalWidget shellTerminalWidget =
-                                            TerminalToolWindowManager
-                                                    .getInstance(Objects.requireNonNull(project))
-                                                    .createLocalShellWidget(project.getBasePath(), "kubectl", true, true);
-                                    try {
-                                        shellTerminalWidget.executeCommand(
-                                                "kubectl "
-                                                + ("get".equals(operation) ? "-o wide " : "")
-                                                + (apiResource.getNamespaced() ? "-n " + genericKubernetesResource.getMetadata().getNamespace() + " " : "")
-                                                + operation
-                                                + " "
-                                                + apiResource.getKind()
-                                                + " "
-                                                + genericKubernetesResource.getMetadata().getName());
-                                    } catch (IOException exception) {
-                                        // Show error dialog
-                                        kubemmanderNotificationGroup
-                                                .createNotification(
-                                                        exception.getMessage()
-                                                        ,NotificationType.ERROR)
-                                                .notify(project);
+                                    } else if (valueOfZeroColumn instanceof String) {
+                                        // Helm release list
+                                        @NotNull ShellTerminalWidget shellTerminalWidget =
+                                                TerminalToolWindowManager
+                                                        .getInstance(Objects.requireNonNull(project))
+                                                        .createLocalShellWidget(project.getBasePath(), "helm", true, true);
+                                        try {
+                                            shellTerminalWidget.executeCommand(
+                                                    "helm list -A");
+                                        } catch (IOException exception) {
+                                            // Show error dialog
+                                            kubemmanderNotificationGroup
+                                                    .createNotification(
+                                                            exception.getMessage()
+                                                            ,NotificationType.ERROR)
+                                                    .notify(project);
+                                        }
                                     }
-                                }
+                                    return;
+                                case "history":
+                                    if (valueOfSixthColumn instanceof Secret secret) {
+                                        // Helm release list
+                                        @NotNull ShellTerminalWidget shellTerminalWidget =
+                                                TerminalToolWindowManager
+                                                        .getInstance(Objects.requireNonNull(project))
+                                                        .createLocalShellWidget(project.getBasePath(), "helm", true, true);
+                                        try {
+                                            shellTerminalWidget.executeCommand(
+                                                    "helm history -n " + secret.getMetadata().getNamespace() + " " + valueOfZeroColumn);
+                                        } catch (IOException exception) {
+                                            // Show error dialog
+                                            kubemmanderNotificationGroup
+                                                    .createNotification(
+                                                            exception.getMessage()
+                                                            ,NotificationType.ERROR)
+                                                    .notify(project);
+                                        }
+                                    }
+                                    return;
+                                case "get":
+                                case "describe":
+                                    if (valueOfZeroColumn instanceof GenericKubernetesResource genericKubernetesResource) {
+                                        APIResource apiResource = (APIResource) valueOfSixthColumn;
+                                        @NotNull ShellTerminalWidget shellTerminalWidget =
+                                                TerminalToolWindowManager
+                                                        .getInstance(Objects.requireNonNull(project))
+                                                        .createLocalShellWidget(project.getBasePath(), "kubectl", true, true);
+                                        try {
+                                            shellTerminalWidget.executeCommand(
+                                                    "kubectl "
+                                                            + ("get".equals(operation) ? "-o wide " : "")
+                                                            + (apiResource.getNamespaced() ? "-n " + genericKubernetesResource.getMetadata().getNamespace() + " " : "")
+                                                            + operation
+                                                            + " "
+                                                            + apiResource.getKind()
+                                                            + " "
+                                                            + genericKubernetesResource.getMetadata().getName());
+                                        } catch (IOException exception) {
+                                            // Show error dialog
+                                            kubemmanderNotificationGroup
+                                                    .createNotification(
+                                                            exception.getMessage()
+                                                            ,NotificationType.ERROR)
+                                                    .notify(project);
+                                        }
+                                    }
+                                    return;
+                                case "load":
+                                    if (valueOfZeroColumn instanceof GenericKubernetesResource genericKubernetesResource) {
+                                        APIResource apiResource = (APIResource) valueOfSixthColumn;
+                                        List<String> kubectlCommand = new LinkedList<>();
+                                        kubectlCommand.add("kubectl");
+                                        kubectlCommand.add("get");
+                                        kubectlCommand.add("-o");
+                                        kubectlCommand.add("yaml");
+                                        if (apiResource.getNamespaced()) {
+                                            kubectlCommand.add("-n");
+                                            kubectlCommand.add(genericKubernetesResource.getMetadata().getNamespace());
+                                        }
+                                        kubectlCommand.add(apiResource.getKind());
+                                        kubectlCommand.add(genericKubernetesResource.getMetadata().getName());
+
+                                        ProcessBuilder kubectlProcessBuilder = new ProcessBuilder(kubectlCommand);
+                                        kubectlProcessBuilder.redirectErrorStream(true);
+
+                                        new Thread(() -> {
+                                            try {
+                                                Process kubectlProcess = kubectlProcessBuilder.start();
+                                                String[] kubectlProcessOutput = new String[1];
+                                                new Thread(() -> {
+                                                    try {
+                                                        kubectlProcessOutput[0] = IOUtils.toString(kubectlProcess.getInputStream(), StandardCharsets.UTF_8);
+                                                    } catch (IOException ignore) {
+                                                    }
+                                                }).start();
+                                                int exitCode = kubectlProcess.waitFor();
+                                                if (exitCode == 0) {
+                                                    ApplicationManager.getApplication().invokeLater(() -> {
+                                                        FileType  fileType = PlainTextFileType.INSTANCE;
+
+                                                        VirtualFile file = VfsUtil.findFileByIoFile(new File("/path/to/file"), true);
+
+                                                        LightVirtualFile lightVirtualFile = new LightVirtualFile(
+                                                                apiResource.getKind() + "-" + genericKubernetesResource.getMetadata().getName() + ".yaml"
+                                                                ,fileType
+                                                                ,"# " +kubectlCommand.stream().collect(Collectors.joining(" ")) + "\n" + kubectlProcessOutput[0]);
+                                                        lightVirtualFile.setWritable(false);
+                                                        // Figure out a way to set language for syntax highlighting based on file extension
+                                                        lightVirtualFile.setLanguage(PlainTextLanguage.INSTANCE);
+                                                        FileEditorManager.getInstance(project).openFile(lightVirtualFile, true);
+                                                        FileEditorManager.getInstance(project).openFile(lightVirtualFile, true);
+                                                    });
+                                                } else {
+                                                    // Show error dialog
+                                                    kubemmanderNotificationGroup.createNotification(
+                                                                    kubectlCommand.stream().collect(Collectors.joining(" ")) + " failed with exit code " + exitCode
+                                                                    ,NotificationType.ERROR)
+                                                            .notify(project);
+                                                }
+                                            } catch (IOException | InterruptedException ignore) {
+                                            }
+                                        }).start();
+                                    }
+                                    return;
+                                case "documentation":
+                                    if (valueOfSixthColumn instanceof APIResource apiResource) {
+                                        KubemmanderExplain.explain(apiResource.getName());
+                                    } else if (valueOfSixthColumn instanceof String stringValueOfSixthColumn) {
+                                        KubemmanderExplain.explain(stringValueOfSixthColumn);
+                                    }
+                                    return;
                             }
                         });
                     });

@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "sandipchitale"
-version = "1.3"
+version = "1.4"
 
 repositories {
     mavenCentral()
