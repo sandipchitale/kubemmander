@@ -25,6 +25,7 @@
     <change-notes><![CDATA[
 <h2>New Features</h2>
 <ul>
+    <li>Filter by selected namespaces</li>
     <li>Show Helm releases</li>
     <li>Include instances checkbox</li>
     <li>Support connect, disconnect, reconnect action.</li>

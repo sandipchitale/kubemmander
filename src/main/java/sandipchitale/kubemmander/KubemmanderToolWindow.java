@@ -69,13 +69,15 @@ public class KubemmanderToolWindow {
     private final JCheckBox includeNamespacedCheckBox;
 
     private final JCheckBox allNamespacesCheckBox;
-    private final ComboBox<String> selectedNamespacesComboBox;
+    private final KubemmanderMenuButton selectedNamespacesMenuButton;
+
+    private final JPopupMenu selectedNamespacesPopupMenu;
+
+    private final Set<String> selectedNamespaces = new TreeSet<>();
 
     private final NotificationGroup kubemmanderNotificationGroup;
 
     private KubernetesClient kubernetesClient = null;
-
-    private String selectedNamespace = null;
 
     private Pattern HELM_SECRET_NAME_PATTERN = Pattern.compile("sh\\.helm\\.release\\.v\\d+\\.(.*).v(\\d)+");
 
@@ -158,6 +160,23 @@ public class KubemmanderToolWindow {
         });
         apiResourcePopupMenu.add(documentationApiResourceMenuItem);
 
+        JPopupMenu helmReleasePopupMenu = new JPopupMenu();
+        JMenuItem helmReleaseListMenuItem = new JMenuItem("List");
+        helmReleaseListMenuItem.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent actionEvent) {
+                execute(actionEvent, "list", project);
+            }
+        });
+        helmReleasePopupMenu.add(helmReleaseListMenuItem);
+
+        JMenuItem helmReleaseLoadMenuItem = new JMenuItem("Load");
+        helmReleaseLoadMenuItem.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent actionEvent) {
+                execute(actionEvent, "load", project);
+            }
+        });
+        helmReleasePopupMenu.add(helmReleaseLoadMenuItem);
+
         JPopupMenu resourcePopupMenu = new JPopupMenu();
         JMenuItem getMenuItem = new JMenuItem("Get");
         getMenuItem.addActionListener(new ActionListener() {
@@ -214,9 +233,11 @@ public class KubemmanderToolWindow {
                         apiResourceTable.changeSelection(row, column, false, false);
                     }
                     Object valueOfZeroColumn = apiResourceTable.getValueAt(row, 0);
-                    Object valueOfZeroSix = apiResourceTable.getValueAt(row, 6);
-                    if (valueOfZeroColumn instanceof APIResource || valueOfZeroColumn instanceof String) {
-                        if (!(valueOfZeroSix instanceof Secret)) {
+                    Object valueOfSixColumn = apiResourceTable.getValueAt(row, 6);
+                    if (valueOfSixColumn instanceof Secret) {
+                        helmReleasePopupMenu.show(e.getComponent(), e.getX(), e.getY());
+                    } if (valueOfZeroColumn instanceof APIResource || valueOfZeroColumn instanceof String) {
+                        if (!(valueOfSixColumn instanceof Secret)) {
                             apiResourcePopupMenu.show(e.getComponent(), e.getX(), e.getY());
                         }
                     } else if (valueOfZeroColumn instanceof GenericKubernetesResource) {
@@ -302,9 +323,9 @@ public class KubemmanderToolWindow {
         JLabel allOrSelectedNamespacesLabel = new JLabel("| Selected:");
         topRightToolBar.add(allOrSelectedNamespacesLabel);
 
-        selectedNamespacesComboBox = new ComboBox<>();
-        selectedNamespacesComboBox.setMinimumAndPreferredWidth(200);
-        topRightToolBar.add(selectedNamespacesComboBox);
+        selectedNamespacesPopupMenu = new JPopupMenu();
+        selectedNamespacesMenuButton = new KubemmanderMenuButton("Namespaces", selectedNamespacesPopupMenu);
+        topRightToolBar.add(selectedNamespacesMenuButton);
 
         allNamespacesCheckBox.addActionListener(this::adjustSelectedNamespacesComboBoxState);
         adjustSelectedNamespacesComboBoxState(null);
@@ -427,8 +448,8 @@ public class KubemmanderToolWindow {
                     ApplicationManager.getApplication().invokeLater(() -> {
                         ApplicationManager.getApplication().runReadAction(() -> {
                             Object valueOfZeroColumn = table.getValueAt(selectedRow, 0);
+                            Object valueOfSixthColumn = table.getValueAt(selectedRow, 6);
                             if (operation.equals("documentation")) {
-                                Object valueOfSixthColumn = table.getValueAt(selectedRow, 6);
                                 if (valueOfSixthColumn instanceof APIResource apiResource) {
                                     KubemmanderExplain.explain(apiResource.getName());
                                 } else if (valueOfSixthColumn instanceof String stringValueOfSixthColumn) {
@@ -436,7 +457,13 @@ public class KubemmanderToolWindow {
                                 }
                                 return;
                             }
-                            if (valueOfZeroColumn instanceof GenericKubernetesResource genericKubernetesResource) {
+                            if (valueOfSixthColumn instanceof Secret) {
+                                if (operation.equals("list")) {
+                                    // Helm release list
+                                } else if (operation.equals("load")) {
+                                    // Helm release load
+                                }
+                            } else if (valueOfZeroColumn instanceof GenericKubernetesResource genericKubernetesResource) {
                                 APIResource apiResource = (APIResource) table.getValueAt(selectedRow, 6);
                                 if (operation.equals("load")) {
                                     List<String> kubectlCommand = new LinkedList<>();
@@ -545,7 +572,7 @@ public class KubemmanderToolWindow {
         apiResourceTable.setPaintBusy(true);
         contextComboBox.removeAllItems();
         namespaceComboBox.removeAllItems();
-        selectedNamespacesComboBox.removeAllItems();
+        selectedNamespacesPopupMenu.removeAll();
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
             ApplicationManager.getApplication().runReadAction(() -> {
                 try (KubernetesClient client = new KubernetesClientBuilder().build()) {
@@ -562,24 +589,41 @@ public class KubemmanderToolWindow {
                             .namespaces()
                             .list(new ListOptionsBuilder().withKind("namespace").build()).getItems().forEach((Namespace namespace) -> {
                                 namespaceComboBox.addItem(namespace.getMetadata().getName());
-                                selectedNamespacesComboBox.addItem(namespace.getMetadata().getName());
+                                JCheckBoxMenuItem checkBoxMenuItem =
+                                        new JCheckBoxMenuItem(namespace.getMetadata().getName());
+                                checkBoxMenuItem.addActionListener((ActionEvent actionEvent1) -> {
+                                   if (checkBoxMenuItem.isSelected()) {
+                                       selectedNamespaces.add(namespace.getMetadata().getName());
+                                   } else {
+                                       selectedNamespaces.remove(namespace.getMetadata().getName());
+                                   }
+                                });
+                                selectedNamespacesPopupMenu.add(checkBoxMenuItem);
                             });
                     if (configuration.isDefaultNamespace()) {
                         String namespace = configuration.getNamespace();
                         if (namespace != null) {
-                            namespaceComboBox.setSelectedItem(namespace);
-                            selectedNamespacesComboBox.setSelectedItem(namespace);
-                        }
-                        if (selectedNamespace != null) {
-                            int itemCount = selectedNamespacesComboBox.getItemCount();
-                            for (int i = 0; i < itemCount; i++) {
-                                if (selectedNamespace.equals(selectedNamespacesComboBox.getItemAt(i))) {
-                                    selectedNamespacesComboBox.setSelectedIndex(i);
-                                    break;
+                            int componentCount = selectedNamespacesPopupMenu.getComponentCount();
+                            for (int i = 0; i < componentCount; i++) {
+                                Component component = selectedNamespacesPopupMenu.getComponent(i);
+                                if (component instanceof JCheckBoxMenuItem checkBoxMenuItem) {
+                                    checkBoxMenuItem.setSelected(namespace.equals(checkBoxMenuItem.getText()));
                                 }
                             }
                         }
                     }
+                    if (!selectedNamespaces.isEmpty()) {
+                        int componentCount = selectedNamespacesPopupMenu.getComponentCount();
+                        for (int i = 0; i < componentCount; i++) {
+                            Component component = selectedNamespacesPopupMenu.getComponent(i);
+                            if (component instanceof JCheckBoxMenuItem checkBoxMenuItem) {
+                                if (selectedNamespaces.contains(checkBoxMenuItem.getText())) {
+                                    checkBoxMenuItem.setSelected(true);
+                                }
+                            }
+                        }
+                    }
+
                     Set<APIResource> apiResourceSet =
                             new TreeSet<>((APIResource apiResource1, APIResource apiResource2) -> apiResource1.getName().compareTo(apiResource2.getName()));
                     Set.of("v1", "apps/v1", "batch/v1", "batch/v1beta1", "extensions/v1beta1", "networking.k8s.io/v1", "storage.k8s.io/v1").forEach((String apiVersion) -> {
@@ -607,7 +651,8 @@ public class KubemmanderToolWindow {
                                 if (helmSecretNamematcher.matches()) {
                                     String releaseName = helmSecretNamematcher.group(1);
                                     String releaseRevision = helmSecretNamematcher.group(2);
-                                    apiResourceTableModel.addRow(
+                                    if (allNamespacesCheckBox.isSelected() || (!selectedNamespaces.isEmpty() && selectedNamespaces.contains(secret.getMetadata().getNamespace()))) {
+                                        apiResourceTableModel.addRow(
                                             new Object[]{
                                                     releaseName,
                                                     "helmrel",
@@ -617,6 +662,7 @@ public class KubemmanderToolWindow {
                                                     "Helmrelease ( helmrelease )",
                                                     secret
                                             });
+                                    }
                                 }
                             });
                         }
@@ -650,7 +696,7 @@ public class KubemmanderToolWindow {
                                             if (!apiResource.getNamespaced()) {
                                                 doAddResourceRow = true;
                                             } else {
-                                                if (allNamespacesCheckBox.isSelected() || (selectedNamespace != null && selectedNamespace.equals(genericKubernetesResource.getMetadata().getNamespace()))) {
+                                                if (allNamespacesCheckBox.isSelected() || (!selectedNamespaces.isEmpty() && selectedNamespaces.contains(genericKubernetesResource.getMetadata().getNamespace()))) {
                                                     doAddResourceRow = true;
                                                 }
                                             }
@@ -674,7 +720,7 @@ public class KubemmanderToolWindow {
                 } catch (Throwable ignore) {
                     kubernetesClient = null;
                 } finally {
-                    selectedNamespace = null;
+                    selectedNamespaces.clear();
                     loadingResourcesLabel.setVisible(false);
                     apiResourceTable.setPaintBusy(false);
                     adjustStates();
@@ -691,9 +737,17 @@ public class KubemmanderToolWindow {
             ApplicationManager.getApplication().runReadAction(() -> {
                 if (reconnect) {
                     if (allNamespacesCheckBox.isSelected()) {
-                        selectedNamespace = null;
+                        selectedNamespaces.clear();;
                     } else {
-                        selectedNamespace = (String) selectedNamespacesComboBox.getSelectedItem();
+                        int componentCount = selectedNamespacesPopupMenu.getComponentCount();
+                        for (int i = 0; i < componentCount; i++) {
+                            Component component = selectedNamespacesPopupMenu.getComponent(i);
+                            if (component instanceof JCheckBoxMenuItem checkBoxMenuItem) {
+                                if (checkBoxMenuItem.isSelected()) {
+                                    selectedNamespaces.add(checkBoxMenuItem.getText());
+                                }
+                            }
+                        }
                     }
                 }
                 try {
@@ -716,9 +770,9 @@ public class KubemmanderToolWindow {
 
     private void adjustSelectedNamespacesComboBoxState(ActionEvent actionEvent) {
         if (allNamespacesCheckBox.isSelected()) {
-            selectedNamespace = null;
+            selectedNamespaces.clear();
         }
-        selectedNamespacesComboBox.setEnabled(!allNamespacesCheckBox.isSelected());
+        selectedNamespacesMenuButton.setEnabled(!allNamespacesCheckBox.isSelected());
     }
 
     private void adjustStates() {
@@ -728,11 +782,11 @@ public class KubemmanderToolWindow {
         contextComboBox.setEnabled(kubernetesClient != null);
         namespaceComboBox.setEnabled(kubernetesClient != null);
         allNamespacesCheckBox.setEnabled(kubernetesClient != null);
-        selectedNamespacesComboBox.setEnabled(kubernetesClient != null && !allNamespacesCheckBox.isSelected());
+        selectedNamespacesMenuButton.setEnabled(kubernetesClient != null && !allNamespacesCheckBox.isSelected());
         if (kubernetesClient == null) {
             contextComboBox.removeAllItems();
             namespaceComboBox.removeAllItems();
-            selectedNamespacesComboBox.removeAllItems();
+            selectedNamespacesPopupMenu.removeAll();
             serverVersion.setText("");
             apiResourceTableModel.setRowCount(0);
         }
