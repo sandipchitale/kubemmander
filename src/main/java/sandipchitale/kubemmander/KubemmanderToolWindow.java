@@ -402,14 +402,16 @@ public class KubemmanderToolWindow {
                     ApplicationManager.getApplication().invokeLater(() -> {
                         ApplicationManager.getApplication().runReadAction(() -> {
                             Object valueOfZeroColumn = table.getValueAt(selectedRow, 0);
-                            if (operation.equals("documentation")) {
-                                if (valueOfZeroColumn instanceof APIResource apiResource) {
-                                    KubemmanderExplain.explain(apiResource.getName());
-                                } else if (valueOfZeroColumn instanceof String stringValueOfSixthColumn) {
-                                    KubemmanderExplain.explain(stringValueOfSixthColumn);
-                                }
-                            } else {
-                                if (operation.equals("load")) {
+                            Object valueOfSixthColumn = table.getValueAt(selectedRow, 6);
+                            switch (operation) {
+                                case "documentation":
+                                    if (valueOfZeroColumn instanceof APIResource apiResource) {
+                                        KubemmanderExplain.explain(apiResource.getName());
+                                    } else if (valueOfZeroColumn instanceof String stringValueOfZeroColumn) {
+                                        KubemmanderExplain.explain(stringValueOfZeroColumn);
+                                    }
+                                    return;
+                                case "load":
                                     if (valueOfZeroColumn instanceof APIResource apiResource) {
                                         List<String> kubectlCommand = new LinkedList<>();
                                         kubectlCommand.add("kubectl");
@@ -457,7 +459,7 @@ public class KubemmanderToolWindow {
                                             }
                                         }).start();
                                     }
-                                }
+                                    return;
                             }
                         });
                     });
