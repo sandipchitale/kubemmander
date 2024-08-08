@@ -34,7 +34,7 @@ import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableColumn;
 import java.awt.*;
 import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.File;
@@ -55,7 +55,9 @@ public class KubemmanderToolWindow {
     private final JTextField kubeconfigTextField;
 
     private final ComboBox<String> contextComboBox;
+    private boolean addingContexts = false;
     private final ComboBox<String> namespaceComboBox;
+    private boolean addingNamespaces = false;
 
     private final JLabel loadingResourcesLabel;
     private final JButton connectToClusterButton;
@@ -79,7 +81,7 @@ public class KubemmanderToolWindow {
 
     private KubernetesClient kubernetesClient = null;
 
-    private Pattern HELM_SECRET_NAME_PATTERN = Pattern.compile("sh\\.helm\\.release\\.v\\d+\\.(.*).v(\\d)+");
+    private final Pattern HELM_SECRET_NAME_PATTERN = Pattern.compile("sh\\.helm\\.release\\.v\\d+\\.(.*).v(\\d)+");
 
     public KubemmanderToolWindow(Project project) {
         this.contentToolWindow = new SimpleToolWindowPanel(true, true);
@@ -143,101 +145,57 @@ public class KubemmanderToolWindow {
 
         JPopupMenu helmReleasesPopupMenu = new JPopupMenu();
         JMenuItem helmReleasesListMenuItem = new JMenuItem("List");
-        helmReleasesListMenuItem.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent actionEvent) {
-                execute(actionEvent, "list", project);
-            }
-        });
+        helmReleasesListMenuItem.addActionListener((ActionEvent actionEvent) -> execute(actionEvent, "list", project));
         helmReleasesPopupMenu.add(helmReleasesListMenuItem);
 
         JMenuItem helmReleasesLoadMenuItem = new JMenuItem("Documentation");
-        helmReleasesLoadMenuItem.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent actionEvent) {
-                execute(actionEvent, "documentation", project);
-            }
-        });
+        helmReleasesLoadMenuItem.addActionListener((ActionEvent actionEvent) -> execute(actionEvent, "documentation", project));
         helmReleasesPopupMenu.add(helmReleasesLoadMenuItem);
 
         JPopupMenu helmReleasePopupMenu = new JPopupMenu();
         JMenuItem helmReleaseListMenuItem = new JMenuItem("List");
-        helmReleaseListMenuItem.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent actionEvent) {
-                execute(actionEvent, "list", project);
-            }
-        });
+        helmReleaseListMenuItem.addActionListener((ActionEvent actionEvent) -> execute(actionEvent, "list", project));
         helmReleasePopupMenu.add(helmReleaseListMenuItem);
 
         JMenuItem helmReleaseHistoryMenuItem = new JMenuItem("History");
-        helmReleaseHistoryMenuItem.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent actionEvent) {
-                execute(actionEvent, "history", project);
-            }
-        });
+        helmReleaseHistoryMenuItem.addActionListener((ActionEvent actionEvent) -> execute(actionEvent, "history", project));
         helmReleasePopupMenu.add(helmReleaseHistoryMenuItem);
 
         JMenuItem helmReleaseLoadMenuItem = new JMenuItem("Load");
-        helmReleaseLoadMenuItem.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent actionEvent) {
-                execute(actionEvent, "load", project);
-            }
-        });
+        helmReleaseLoadMenuItem.addActionListener((ActionEvent actionEvent) -> execute(actionEvent, "load", project));
         helmReleasePopupMenu.add(helmReleaseLoadMenuItem);
 
         JPopupMenu apiResourcePopupMenu = new JPopupMenu();
 
         JMenuItem loadApiResourceMenuItem = new JMenuItem("Load");
-        loadApiResourceMenuItem.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent actionEvent) {
-                executeApiResourceActions(actionEvent, "load", project);
-            }
-        });
+        loadApiResourceMenuItem.addActionListener((ActionEvent actionEvent) -> executeApiResourceActions(actionEvent, "load", project));
         apiResourcePopupMenu.add(loadApiResourceMenuItem);
 
         apiResourcePopupMenu.add(new JSeparator());
 
         JMenuItem documentationApiResourceMenuItem = new JMenuItem("Documentation");
-        documentationApiResourceMenuItem.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent actionEvent) {
-                executeApiResourceActions(actionEvent, "documentation", project);
-            }
-        });
+        documentationApiResourceMenuItem.addActionListener((ActionEvent actionEvent) -> executeApiResourceActions(actionEvent, "documentation", project));
         apiResourcePopupMenu.add(documentationApiResourceMenuItem);
 
         JPopupMenu resourcePopupMenu = new JPopupMenu();
         JMenuItem getMenuItem = new JMenuItem("Get");
-        getMenuItem.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent actionEvent) {
-                execute(actionEvent, "get", project);
-            }
-        });
+        getMenuItem.addActionListener((ActionEvent actionEvent) -> execute(actionEvent, "get", project));
         resourcePopupMenu.add(getMenuItem);
 
         JMenuItem describeMenuItem = new JMenuItem("Describe");
-        describeMenuItem.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent actionEvent) {
-                execute(actionEvent, "describe", project);
-            }
-        });
+        describeMenuItem.addActionListener((ActionEvent actionEvent) -> execute(actionEvent, "describe", project));
         resourcePopupMenu.add(describeMenuItem);
 
         resourcePopupMenu.add(new JSeparator());
 
         JMenuItem loadMenuItem = new JMenuItem("Load");
-        loadMenuItem.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent actionEvent) {
-                execute(actionEvent, "load", project);
-            }
-        });
+        loadMenuItem.addActionListener((ActionEvent actionEvent) -> execute(actionEvent, "load", project));
         resourcePopupMenu.add(loadMenuItem);
 
         resourcePopupMenu.add(new JSeparator());
 
         JMenuItem documentationMenuItem = new JMenuItem("Documentation");
-        documentationMenuItem.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent actionEvent) {
-                execute(actionEvent, "documentation", project);
-            }
-        });
+        documentationMenuItem.addActionListener((ActionEvent actionEvent) -> execute(actionEvent, "documentation", project));
         resourcePopupMenu.add(documentationMenuItem);
 
         apiResourceTable.addMouseListener(new MouseAdapter() {
@@ -293,9 +251,7 @@ public class KubemmanderToolWindow {
         topLeftToolBar.add(kubeconfigTextField);
 
         JButton editKubeconfigButton = new JButton(AllIcons.Actions.EditSource);
-        editKubeconfigButton.addActionListener((ActionEvent actionEvent) -> {
-            editKubeConfigFile(project);
-        });
+        editKubeconfigButton.addActionListener((ActionEvent actionEvent) -> editKubeConfigFile(project));
         topLeftToolBar.add(editKubeconfigButton);
 
         connectToClusterButton = new JButton(AllIcons.Actions.Execute);
@@ -319,9 +275,7 @@ public class KubemmanderToolWindow {
 
         reconnectToCusterButton = new JButton(AllIcons.Actions.Refresh);
         reconnectToCusterButton.setToolTipText("Reconnect to Cluster - selected namespace will be used to filter resources");
-        reconnectToCusterButton.addActionListener((ActionEvent actionEvent) -> {
-            disconnectFromCluster(actionEvent, true);
-        });
+        reconnectToCusterButton.addActionListener((ActionEvent actionEvent) -> disconnectFromCluster(actionEvent, true));
         topRightToolBar.add(reconnectToCusterButton);
 
         JLabel includeLabel = new JLabel("Include: ");
@@ -381,6 +335,25 @@ public class KubemmanderToolWindow {
         contextComboBox.setMinimumAndPreferredWidth(200);
         bottomRightToolBar.add(contextComboBox);
 
+
+        contextComboBox.addItemListener((ItemEvent itemEvent) -> {
+            if (addingContexts || addingNamespaces) {
+                return;
+            };
+            if (kubernetesClient != null) {
+                if (contextComboBox.getSelectedItem() instanceof String contextName) {
+                    Config configuration = kubernetesClient.getConfiguration();
+                    configuration.getContexts().forEach((context) -> {
+                        if (contextName.equals(context.getName())) {
+                            configuration.setCurrentContext(context);
+                            kubernetesClient.close();
+                            disconnectFromCluster(null, true);
+                        }
+                    });
+                }
+            }
+        });
+
         JLabel namespaceLabel = new JLabel("Namespace: ");
         bottomRightToolBar.add(namespaceLabel);
 
@@ -388,84 +361,23 @@ public class KubemmanderToolWindow {
         namespaceComboBox.setMinimumAndPreferredWidth(200);
         bottomRightToolBar.add(namespaceComboBox);
 
+        namespaceComboBox.addItemListener((ItemEvent itemEvent) -> {
+            if (addingContexts || addingNamespaces) {
+                return;
+            };
+            if (kubernetesClient != null) {
+                if (namespaceComboBox.getSelectedItem() instanceof String namespaceName) {
+                    Config configuration = kubernetesClient.getConfiguration();
+                    configuration.setNamespace(namespaceName);
+                    kubernetesClient.close();
+                    disconnectFromCluster(null, true);
+                }
+            }
+        });
+
         this.contentToolWindow.add(toolBars, BorderLayout.NORTH);
 
         connectToCluster(null);
-    }
-
-    private void executeApiResourceActions(ActionEvent actionEvent, String operation, Project project) {
-        if (actionEvent.getSource() instanceof JMenuItem menuItem) {
-            JPopupMenu popup = (JPopupMenu) menuItem.getParent();
-            if (popup.getInvoker() instanceof JTable table) {
-                int selectedRow = table.getSelectedRow();
-                if (selectedRow >= 0) {
-                    ApplicationManager.getApplication().invokeLater(() -> {
-                        ApplicationManager.getApplication().runReadAction(() -> {
-                            Object valueOfZeroColumn = table.getValueAt(selectedRow, 0);
-                            Object valueOfSixthColumn = table.getValueAt(selectedRow, 6);
-                            switch (operation) {
-                                case "documentation":
-                                    if (valueOfZeroColumn instanceof APIResource apiResource) {
-                                        KubemmanderExplain.explain(apiResource.getName());
-                                    } else if (valueOfZeroColumn instanceof String stringValueOfZeroColumn) {
-                                        KubemmanderExplain.explain(stringValueOfZeroColumn);
-                                    }
-                                    return;
-                                case "load":
-                                    if (valueOfZeroColumn instanceof APIResource apiResource) {
-                                        List<String> kubectlCommand = new LinkedList<>();
-                                        kubectlCommand.add("kubectl");
-                                        kubectlCommand.add("explain");
-                                        kubectlCommand.add(apiResource.getName());
-//                                        kubectlCommand.add("--api-version=" + apiResource.getVersion());
-                                        kubectlCommand.add("--recursive=true");
-                                        ProcessBuilder kubectlProcessBuilder = new ProcessBuilder(kubectlCommand);
-                                        kubectlProcessBuilder.redirectErrorStream(true);
-                                        new Thread(() -> {
-                                            try {
-                                                Process kubectlProcess = kubectlProcessBuilder.start();
-                                                String[] kubectlProcessOutput = new String[1];
-                                                new Thread(() -> {
-                                                    try {
-                                                        kubectlProcessOutput[0] = IOUtils.toString(kubectlProcess.getInputStream(), StandardCharsets.UTF_8);
-                                                    } catch (IOException ignore) {
-                                                    }
-                                                }).start();
-                                                int exitCode = kubectlProcess.waitFor();
-                                                if (exitCode == 0) {
-                                                    ApplicationManager.getApplication().invokeLater(() -> {
-                                                        FileType  fileType = PlainTextFileType.INSTANCE;
-
-                                                        VirtualFile file = VfsUtil.findFileByIoFile(new File("/path/to/file"), true);
-
-                                                        LightVirtualFile lightVirtualFile = new LightVirtualFile(
-                                                                apiResource.getName() + ".yaml"
-                                                                ,fileType
-                                                                ,"# " + kubectlCommand.stream().collect(Collectors.joining(" ")) + "\n" + kubectlProcessOutput[0]);
-                                                        lightVirtualFile.setWritable(false);
-                                                        // Figure out a way to set language for syntax highlighting based on file extension
-                                                        lightVirtualFile.setLanguage(PlainTextLanguage.INSTANCE);
-                                                        FileEditorManager.getInstance(project).openFile(lightVirtualFile, true);
-                                                        FileEditorManager.getInstance(project).openFile(lightVirtualFile, true);
-                                                    });
-                                                } else {
-                                                    // Show error dialog
-                                                    kubemmanderNotificationGroup.createNotification(
-                                                                    kubectlCommand.stream().collect(Collectors.joining(" ")) + " failed with exit code " + exitCode
-                                                                    ,NotificationType.ERROR)
-                                                            .notify(project);
-                                                }
-                                            } catch (IOException | InterruptedException ignore) {
-                                            }
-                                        }).start();
-                                    }
-                                    return;
-                            }
-                        });
-                    });
-                }
-            }
-        }
     }
 
     private void execute(ActionEvent actionEvent, String operation, Project project) {
@@ -596,9 +508,6 @@ public class KubemmanderToolWindow {
                                                 if (exitCode == 0) {
                                                     ApplicationManager.getApplication().invokeLater(() -> {
                                                         FileType  fileType = PlainTextFileType.INSTANCE;
-
-                                                        VirtualFile file = VfsUtil.findFileByIoFile(new File("/path/to/file"), true);
-
                                                         LightVirtualFile lightVirtualFile = new LightVirtualFile(
                                                                 apiResource.getKind() + "-" + genericKubernetesResource.getMetadata().getName() + ".yaml"
                                                                 ,fileType
@@ -627,7 +536,76 @@ public class KubemmanderToolWindow {
                                     } else if (valueOfSixthColumn instanceof String stringValueOfSixthColumn) {
                                         KubemmanderExplain.explain(stringValueOfSixthColumn);
                                     }
+                            }
+                        });
+                    });
+                }
+            }
+        }
+    }
+
+    private void executeApiResourceActions(ActionEvent actionEvent, String operation, Project project) {
+        if (actionEvent.getSource() instanceof JMenuItem menuItem) {
+            JPopupMenu popup = (JPopupMenu) menuItem.getParent();
+            if (popup.getInvoker() instanceof JTable table) {
+                int selectedRow = table.getSelectedRow();
+                if (selectedRow >= 0) {
+                    ApplicationManager.getApplication().invokeLater(() -> {
+                        ApplicationManager.getApplication().runReadAction(() -> {
+                            Object valueOfZeroColumn = table.getValueAt(selectedRow, 0);
+                            switch (operation) {
+                                case "documentation":
+                                    if (valueOfZeroColumn instanceof APIResource apiResource) {
+                                        KubemmanderExplain.explain(apiResource.getName());
+                                    } else if (valueOfZeroColumn instanceof String stringValueOfZeroColumn) {
+                                        KubemmanderExplain.explain(stringValueOfZeroColumn);
+                                    }
                                     return;
+                                case "load":
+                                    if (valueOfZeroColumn instanceof APIResource apiResource) {
+                                        List<String> kubectlCommand = new LinkedList<>();
+                                        kubectlCommand.add("kubectl");
+                                        kubectlCommand.add("explain");
+                                        kubectlCommand.add(apiResource.getName());
+//                                        kubectlCommand.add("--api-version=" + apiResource.getVersion());
+                                        kubectlCommand.add("--recursive=true");
+                                        ProcessBuilder kubectlProcessBuilder = new ProcessBuilder(kubectlCommand);
+                                        kubectlProcessBuilder.redirectErrorStream(true);
+                                        new Thread(() -> {
+                                            try {
+                                                Process kubectlProcess = kubectlProcessBuilder.start();
+                                                String[] kubectlProcessOutput = new String[1];
+                                                new Thread(() -> {
+                                                    try {
+                                                        kubectlProcessOutput[0] = IOUtils.toString(kubectlProcess.getInputStream(), StandardCharsets.UTF_8);
+                                                    } catch (IOException ignore) {
+                                                    }
+                                                }).start();
+                                                int exitCode = kubectlProcess.waitFor();
+                                                if (exitCode == 0) {
+                                                    ApplicationManager.getApplication().invokeLater(() -> {
+                                                        FileType  fileType = PlainTextFileType.INSTANCE;
+                                                        LightVirtualFile lightVirtualFile = new LightVirtualFile(
+                                                                apiResource.getName() + ".yaml"
+                                                                ,fileType
+                                                                ,"# " + kubectlCommand.stream().collect(Collectors.joining(" ")) + "\n" + kubectlProcessOutput[0]);
+                                                        lightVirtualFile.setWritable(false);
+                                                        // Figure out a way to set language for syntax highlighting based on file extension
+                                                        lightVirtualFile.setLanguage(PlainTextLanguage.INSTANCE);
+                                                        FileEditorManager.getInstance(project).openFile(lightVirtualFile, true);
+                                                        FileEditorManager.getInstance(project).openFile(lightVirtualFile, true);
+                                                    });
+                                                } else {
+                                                    // Show error dialog
+                                                    kubemmanderNotificationGroup.createNotification(
+                                                                    kubectlCommand.stream().collect(Collectors.joining(" ")) + " failed with exit code " + exitCode
+                                                                    ,NotificationType.ERROR)
+                                                            .notify(project);
+                                                }
+                                            } catch (IOException | InterruptedException ignore) {
+                                            }
+                                        }).start();
+                                    }
                             }
                         });
                     });
@@ -663,55 +641,62 @@ public class KubemmanderToolWindow {
             ApplicationManager.getApplication().runReadAction(() -> {
                 try (KubernetesClient client = new KubernetesClientBuilder().build()) {
                     kubernetesClient = client;
-
                     VersionInfo kubernetesVersion = kubernetesClient.getKubernetesVersion();
                     serverVersion.setText(kubernetesVersion.getMajor() + "." + kubernetesVersion.getMinor());
                     Config configuration = client.getConfiguration();
-                    configuration.getContexts().forEach((context) -> {
-                        contextComboBox.addItem(context.getName());
-                    });
 
-                    kubernetesClient
-                            .namespaces()
-                            .list(new ListOptionsBuilder().withKind("namespace").build()).getItems().forEach((Namespace namespace) -> {
-                                namespaceComboBox.addItem(namespace.getMetadata().getName());
-                                JCheckBoxMenuItem checkBoxMenuItem =
-                                        new JCheckBoxMenuItem(namespace.getMetadata().getName());
-                                checkBoxMenuItem.addActionListener((ActionEvent actionEvent1) -> {
-                                   if (checkBoxMenuItem.isSelected()) {
-                                       selectedNamespaces.add(namespace.getMetadata().getName());
-                                   } else {
-                                       selectedNamespaces.remove(namespace.getMetadata().getName());
-                                   }
+                    addingContexts = true;
+                    addingNamespaces = true;
+                    try {
+                        configuration.getContexts().forEach((context) -> {
+                            contextComboBox.addItem(context.getName());
+                        });
+
+                        kubernetesClient
+                                .namespaces()
+                                .list(new ListOptionsBuilder().withKind("namespace").build()).getItems().forEach((Namespace namespace) -> {
+                                    namespaceComboBox.addItem(namespace.getMetadata().getName());
+                                    JCheckBoxMenuItem checkBoxMenuItem =
+                                            new JCheckBoxMenuItem(namespace.getMetadata().getName());
+                                    checkBoxMenuItem.addActionListener((ActionEvent actionEvent1) -> {
+                                       if (checkBoxMenuItem.isSelected()) {
+                                           selectedNamespaces.add(namespace.getMetadata().getName());
+                                       } else {
+                                           selectedNamespaces.remove(namespace.getMetadata().getName());
+                                       }
+                                    });
+                                    selectedNamespacesPopupMenu.add(checkBoxMenuItem);
                                 });
-                                selectedNamespacesPopupMenu.add(checkBoxMenuItem);
-                            });
-                    if (configuration.isDefaultNamespace()) {
-                        String namespace = configuration.getNamespace();
-                        if (namespace != null) {
+                        if (configuration.isDefaultNamespace()) {
+                            String namespace = configuration.getNamespace();
+                            if (namespace != null) {
+                                int componentCount = selectedNamespacesPopupMenu.getComponentCount();
+                                for (int i = 0; i < componentCount; i++) {
+                                    Component component = selectedNamespacesPopupMenu.getComponent(i);
+                                    if (component instanceof JCheckBoxMenuItem checkBoxMenuItem) {
+                                        checkBoxMenuItem.setSelected(namespace.equals(checkBoxMenuItem.getText()));
+                                    }
+                                }
+                            }
+                        }
+                        if (!selectedNamespaces.isEmpty()) {
                             int componentCount = selectedNamespacesPopupMenu.getComponentCount();
                             for (int i = 0; i < componentCount; i++) {
                                 Component component = selectedNamespacesPopupMenu.getComponent(i);
                                 if (component instanceof JCheckBoxMenuItem checkBoxMenuItem) {
-                                    checkBoxMenuItem.setSelected(namespace.equals(checkBoxMenuItem.getText()));
+                                    if (selectedNamespaces.contains(checkBoxMenuItem.getText())) {
+                                        checkBoxMenuItem.setSelected(true);
+                                    }
                                 }
                             }
                         }
-                    }
-                    if (!selectedNamespaces.isEmpty()) {
-                        int componentCount = selectedNamespacesPopupMenu.getComponentCount();
-                        for (int i = 0; i < componentCount; i++) {
-                            Component component = selectedNamespacesPopupMenu.getComponent(i);
-                            if (component instanceof JCheckBoxMenuItem checkBoxMenuItem) {
-                                if (selectedNamespaces.contains(checkBoxMenuItem.getText())) {
-                                    checkBoxMenuItem.setSelected(true);
-                                }
-                            }
-                        }
+                    } finally {
+                        addingContexts = false;
+                        addingNamespaces = false;
                     }
 
                     Set<APIResource> apiResourceSet =
-                            new TreeSet<>((APIResource apiResource1, APIResource apiResource2) -> apiResource1.getName().compareTo(apiResource2.getName()));
+                            new TreeSet<>(Comparator.comparing(APIResource::getName));
                     Set.of("v1", "apps/v1", "batch/v1", "batch/v1beta1", "extensions/v1beta1", "networking.k8s.io/v1", "storage.k8s.io/v1").forEach((String apiVersion) -> {
                         APIResourceList apiResources = kubernetesClient.getApiResources(apiVersion);
                         if (apiResources != null && apiResources.getResources() != null) {
@@ -823,7 +808,7 @@ public class KubemmanderToolWindow {
             ApplicationManager.getApplication().runReadAction(() -> {
                 if (reconnect) {
                     if (allNamespacesCheckBox.isSelected()) {
-                        selectedNamespaces.clear();;
+                        selectedNamespaces.clear();
                     } else {
                         int componentCount = selectedNamespacesPopupMenu.getComponentCount();
                         for (int i = 0; i < componentCount; i++) {
@@ -897,7 +882,7 @@ public class KubemmanderToolWindow {
                     icon = KubemmanderIcons.resourceTypeWithIcon.get(apiResource.getName());
                 } else if (valueInColumnSix instanceof String stringValue) {
                     icon = KubemmanderIcons.resourceTypeWithIcon.get(stringValue);
-                } else if (valueInColumnSix instanceof Secret secret && "helmrel".equals(valueInColumnOne)) {
+                } else if (valueInColumnSix instanceof Secret && "helmrel".equals(valueInColumnOne)) {
                     icon = KubemmanderIcons.resourceTypeWithIcon.get("helmreleases");
                 }
             }
@@ -918,7 +903,7 @@ public class KubemmanderToolWindow {
                 labelCellRendererComponent.setIcon(null);
                 if (column == 0) {
                     if (icon == null) {
-                        if (valueInColumnZero instanceof APIResource apiResource) {
+                        if (valueInColumnZero instanceof APIResource) {
                             icon = DIRECTORY_ICON;
                         } else if (valueInColumnZero instanceof GenericKubernetesResource || valueInColumnSix instanceof Secret) {
                             icon = FILE_ICON;
@@ -927,7 +912,7 @@ public class KubemmanderToolWindow {
                     labelCellRendererComponent.setIcon(icon);
                     if (valueInColumnZero instanceof GenericKubernetesResource) {
                         labelCellRendererComponent.setBorder(BorderFactory.createEmptyBorder(0, 20, 0, 0));
-                    } else if (valueInColumnSix instanceof Secret secret && "helmrel".equals(valueInColumnOne)) {
+                    } else if (valueInColumnSix instanceof Secret && "helmrel".equals(valueInColumnOne)) {
                         labelCellRendererComponent.setBorder(BorderFactory.createEmptyBorder(0, 20, 0, 0));
                     }
                 }
