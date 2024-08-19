@@ -8,9 +8,9 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 class KubemmanderExplain {
-    private static String DOC_URL_PREFIX = "https://kubernetes.io/docs/reference/kubernetes-api/";
+    private static final String DOC_URL_PREFIX = "https://kubernetes.io/docs/reference/kubernetes-api/";
 
-    private static Map<String, String> DOC_URL_SUFFIX = new LinkedHashMap<>();
+    private static final Map<String, String> DOC_URL_SUFFIX = new LinkedHashMap<>();
     static {
         DOC_URL_SUFFIX.put("helmreleases", "https://helm.sh/docs/chart_template_guide/getting_started/");
         DOC_URL_SUFFIX.put("apiservices", "cluster-resources/api-service-v1");

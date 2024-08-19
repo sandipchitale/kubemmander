@@ -6,12 +6,13 @@ import com.intellij.notification.NotificationGroupManager;
 import com.intellij.notification.NotificationType;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.fileEditor.FileEditorManager;
+import com.intellij.openapi.fileEditor.ex.FileEditorManagerEx;
+import com.intellij.openapi.fileEditor.impl.EditorWindow;
 import com.intellij.openapi.fileTypes.FileType;
 import com.intellij.openapi.fileTypes.PlainTextFileType;
 import com.intellij.openapi.fileTypes.PlainTextLanguage;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.ui.ComboBox;
-import com.intellij.openapi.ui.SimpleToolWindowPanel;
+import com.intellij.openapi.ui.*;
 import com.intellij.openapi.vfs.VfsUtil;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.testFramework.LightVirtualFile;
@@ -83,6 +84,10 @@ public class KubemmanderToolWindow {
 
     private final Pattern HELM_SECRET_NAME_PATTERN = Pattern.compile("sh\\.helm\\.release\\.v\\d+\\.(.*).v(\\d)+");
 
+    private final WhatPanel whatPanel = WhatPanel.build(BorderLayout.CENTER);
+
+    private final Map<String, Namespace> namespacenameToNamespaceMap = new HashMap<>();
+
     public KubemmanderToolWindow(Project project) {
         this.contentToolWindow = new SimpleToolWindowPanel(true, true);
 
@@ -142,7 +147,6 @@ public class KubemmanderToolWindow {
         column.setWidth(0);
         column.setMaxWidth(0);
 
-
         JPopupMenu helmReleasesPopupMenu = new JPopupMenu();
         JMenuItem helmReleasesListMenuItem = new JMenuItem("List");
         helmReleasesListMenuItem.addActionListener((ActionEvent actionEvent) -> execute(actionEvent, "list", project));
@@ -151,6 +155,13 @@ public class KubemmanderToolWindow {
         JMenuItem helmReleasesLoadMenuItem = new JMenuItem("Documentation");
         helmReleasesLoadMenuItem.addActionListener((ActionEvent actionEvent) -> execute(actionEvent, "documentation", project));
         helmReleasesPopupMenu.add(helmReleasesLoadMenuItem);
+
+        helmReleasesPopupMenu.add(new JSeparator());
+
+        // Helm Diff
+        JMenuItem helmReleasesDiffMenuItem = new JMenuItem("Diff Release.Revisions...");
+        helmReleasesDiffMenuItem.addActionListener((ActionEvent actionEvent) -> HelmDiffAction.showDiff(project));
+        helmReleasesPopupMenu.add(helmReleasesDiffMenuItem);
 
         JPopupMenu helmReleasePopupMenu = new JPopupMenu();
         JMenuItem helmReleaseListMenuItem = new JMenuItem("List");
@@ -161,7 +172,9 @@ public class KubemmanderToolWindow {
         helmReleaseHistoryMenuItem.addActionListener((ActionEvent actionEvent) -> execute(actionEvent, "history", project));
         helmReleasePopupMenu.add(helmReleaseHistoryMenuItem);
 
-        JMenuItem helmReleaseLoadMenuItem = new JMenuItem("Load");
+        helmReleasePopupMenu.add(new JSeparator());
+
+        JMenuItem helmReleaseLoadMenuItem = new JMenuItem("Get...");
         helmReleaseLoadMenuItem.addActionListener((ActionEvent actionEvent) -> execute(actionEvent, "load", project));
         helmReleasePopupMenu.add(helmReleaseLoadMenuItem);
 
@@ -335,7 +348,6 @@ public class KubemmanderToolWindow {
         contextComboBox.setMinimumAndPreferredWidth(200);
         bottomRightToolBar.add(contextComboBox);
 
-
         contextComboBox.addItemListener((ItemEvent itemEvent) -> {
             if (addingContexts || addingNamespaces) {
                 return;
@@ -477,7 +489,50 @@ public class KubemmanderToolWindow {
                                     }
                                     return;
                                 case "load":
-                                    if (valueOfZeroColumn instanceof GenericKubernetesResource genericKubernetesResource) {
+                                    if (valueOfSixthColumn instanceof Secret secret) {
+                                        DialogBuilder builder = new DialogBuilder(project);
+                                        builder.setCenterPanel(whatPanel);
+                                        builder.setDimensionServiceKey("SelectWhat");
+                                        builder.setTitle("Select");
+                                        builder.removeAllActions();
+
+                                        builder.addCancelAction();
+
+                                        builder.addOkAction();
+                                        builder.setOkOperation(() -> {
+                                            if (whatPanel.isAny()) {
+                                                builder.getDialogWrapper().close(DialogWrapper.OK_EXIT_CODE);
+                                            } else {
+                                                Messages.showMessageDialog(
+                                                        project,
+                                                        "Please select at least one of chart info, values, templates, manifests, hooks, notes for get",
+                                                        "Select at Least One for Get",
+                                                        Messages.getInformationIcon());
+                                            }
+                                        });
+
+                                        try {
+                                            String release = (String) table.getValueAt(selectedRow, 1);
+                                            String revision = (String) table.getValueAt(selectedRow, 2);
+                                            whatPanel.setTitleLabel(release, revision, secret.getMetadata().getNamespace());
+                                            boolean isOk = builder.show() == DialogWrapper.OK_EXIT_CODE;
+                                            if (isOk) {
+                                                if (whatPanel.isAny()) {
+                                                    Namespace namespace = namespacenameToNamespaceMap.get(secret.getMetadata().getNamespace());
+                                                    if (namespace != null) {
+                                                        showReleaseRevision(project,
+                                                                new NamespaceSecretReleaseRevision(
+                                                                        namespace,
+                                                                        secret,
+                                                                        release,
+                                                                        revision),
+                                                                whatPanel);
+                                                    }
+                                                }
+                                            }
+                                        } finally {
+                                        }
+                                    } else if (valueOfZeroColumn instanceof GenericKubernetesResource genericKubernetesResource) {
                                         APIResource apiResource = (APIResource) valueOfSixthColumn;
                                         List<String> kubectlCommand = new LinkedList<>();
                                         kubectlCommand.add("kubectl");
@@ -636,6 +691,7 @@ public class KubemmanderToolWindow {
         apiResourceTable.setPaintBusy(true);
         contextComboBox.removeAllItems();
         namespaceComboBox.removeAllItems();
+        namespacenameToNamespaceMap.clear();
         selectedNamespacesPopupMenu.removeAll();
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
             ApplicationManager.getApplication().runReadAction(() -> {
@@ -656,6 +712,7 @@ public class KubemmanderToolWindow {
                                 .namespaces()
                                 .list(new ListOptionsBuilder().withKind("namespace").build()).getItems().forEach((Namespace namespace) -> {
                                     namespaceComboBox.addItem(namespace.getMetadata().getName());
+                                    namespacenameToNamespaceMap.put(namespace.getMetadata().getName(), namespace);
                                     JCheckBoxMenuItem checkBoxMenuItem =
                                             new JCheckBoxMenuItem(namespace.getMetadata().getName());
                                     checkBoxMenuItem.addActionListener((ActionEvent actionEvent1) -> {
@@ -857,6 +914,7 @@ public class KubemmanderToolWindow {
         if (kubernetesClient == null) {
             contextComboBox.removeAllItems();
             namespaceComboBox.removeAllItems();
+            namespacenameToNamespaceMap.clear();
             selectedNamespacesPopupMenu.removeAll();
             serverVersion.setText("");
             apiResourceTableModel.setRowCount(0);
@@ -865,6 +923,90 @@ public class KubemmanderToolWindow {
 
     public JComponent getContent() {
         return this.contentToolWindow;
+    }
+
+    private static void showHelmDiff(Project project) {
+    }
+
+    private static void showReleaseRevision(Project project,
+                                            NamespaceSecretReleaseRevision namespaceSecretStringStringNamespaceSecretReleaseRevision,
+                                            WhatPanel whatPanel) {
+        FileEditorManagerEx fileEditorManager = (FileEditorManagerEx) FileEditorManager.getInstance(project);
+
+        EditorWindow currentWindow = fileEditorManager.getCurrentWindow();
+        if (currentWindow != null) {
+            fileEditorManager.createSplitter(JSplitPane.VERTICAL_SPLIT, currentWindow);
+            currentWindow = fileEditorManager.getCurrentWindow();
+        }
+
+        HelmReleaseRevisionAccessor helmReleaseRevisionAccessor = new HelmReleaseRevisionAccessor(namespaceSecretStringStringNamespaceSecretReleaseRevision);
+        String title = helmReleaseRevisionAccessor.getTitle();
+
+        // Chart Info
+        if (whatPanel.isChartInfo()) {
+            LightVirtualFile charInfoLightVirtualFile = new LightVirtualFile(Constants.CHART_INFO + title,
+                    PlainTextFileType.INSTANCE,
+                    helmReleaseRevisionAccessor.getChartInfo());
+            charInfoLightVirtualFile.setWritable(false);
+            // Figure out a way to set language for syntax highlighting based on file extension
+            charInfoLightVirtualFile.setLanguage(PlainTextLanguage.INSTANCE);
+            fileEditorManager.openFile(charInfoLightVirtualFile, true, true);
+        }
+
+        // Values
+        if (whatPanel.isValues()) {
+            LightVirtualFile valuesLightVirtualFile = new LightVirtualFile(Constants.VALUES + title,
+                    PlainTextFileType.INSTANCE,
+                    helmReleaseRevisionAccessor.getValues());
+            valuesLightVirtualFile.setWritable(false);
+            // Figure out a way to set language for syntax highlighting based on file extension
+            valuesLightVirtualFile.setLanguage(PlainTextLanguage.INSTANCE);
+            fileEditorManager.openFile(valuesLightVirtualFile, true, true);
+        }
+
+        // Templates
+        if (whatPanel.isTemplates()) {
+            LightVirtualFile templatesvaluesLightVirtualFile = new LightVirtualFile(Constants.TEMPLATES + title,
+                    PlainTextFileType.INSTANCE,
+                    helmReleaseRevisionAccessor.getTemplates());
+            templatesvaluesLightVirtualFile.setWritable(false);
+            // Figure out a way to set language for syntax highlighting based on file extension
+            templatesvaluesLightVirtualFile.setLanguage(PlainTextLanguage.INSTANCE);
+            fileEditorManager.openFile(templatesvaluesLightVirtualFile, true, true);
+        }
+
+        // Manifest
+        if (whatPanel.isManifests()) {
+            LightVirtualFile manifestLightVirtualFile = new LightVirtualFile(Constants.MANIFESTS + title,
+                    PlainTextFileType.INSTANCE,
+                    helmReleaseRevisionAccessor.getManifests());
+            manifestLightVirtualFile.setWritable(false);
+            // Figure out a way to set language for syntax highlighting based on file extension
+            manifestLightVirtualFile.setLanguage(PlainTextLanguage.INSTANCE);
+            fileEditorManager.openFile(manifestLightVirtualFile, true, true);
+        }
+
+        // Hooks
+        if (whatPanel.isHooks()) {
+            LightVirtualFile hooksLightVirtualFile = new LightVirtualFile(Constants.HOOKS + title,
+                    PlainTextFileType.INSTANCE,
+                    helmReleaseRevisionAccessor.getHooks());
+            hooksLightVirtualFile.setWritable(false);
+            // Figure out a way to set language for syntax highlighting based on file extension
+            hooksLightVirtualFile.setLanguage(PlainTextLanguage.INSTANCE);
+            fileEditorManager.openFile(hooksLightVirtualFile, true, true);
+        }
+
+        // Notes
+        if (whatPanel.isNotes()) {
+            LightVirtualFile notesvaluesLightVirtualFile = new LightVirtualFile(Constants.NOTES + title,
+                    PlainTextFileType.INSTANCE,
+                    helmReleaseRevisionAccessor.getNotes());
+            notesvaluesLightVirtualFile.setWritable(false);
+            // Figure out a way to set language for syntax highlighting based on file extension
+            notesvaluesLightVirtualFile.setLanguage(PlainTextLanguage.INSTANCE);
+            fileEditorManager.openFile(notesvaluesLightVirtualFile, true, true);
+        }
     }
 
     private static class ResourceTableCellRenderer extends DefaultTableCellRenderer {

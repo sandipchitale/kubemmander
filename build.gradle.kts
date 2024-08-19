@@ -5,14 +5,18 @@ plugins {
 }
 
 group = "sandipchitale"
-version = "1.8"
+version = "1.9"
 
 repositories {
     mavenCentral()
 }
 
+configurations.all {
+    exclude("org.slf4j")
+}
+
 dependencies {
-    implementation ("io.fabric8:kubernetes-client:6.7.2")  { exclude("org.slf4j") }
+    implementation ("io.fabric8:kubernetes-client:6.13.3")
 }
 
 // Configure Gradle IntelliJ Plugin

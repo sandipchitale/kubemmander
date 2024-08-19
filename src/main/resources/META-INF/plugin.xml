@@ -25,6 +25,11 @@
     <change-notes><![CDATA[
 <h2>New Features</h2>
 <ul>
+    <li>Helm Get command</li>
+    <li>Helm diff</li>
+</ul>
+<h2>Features</h2>
+<ul>
     <li>Filter by selected namespaces</li>
     <li>Show Helm releases</li>
     <li>Include instances checkbox</li>
@@ -37,6 +42,7 @@
 </ul>
 <h2>Known Issues</h2>
 <ul>
+    <li>Diff editors are shown twice.</li>
     <li>get and describe commands do not work with the New Terminal <sup>Beta</sup></li>
 </ul>
 <h2>Bug Fixes</h2>
