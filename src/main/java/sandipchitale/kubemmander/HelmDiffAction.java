@@ -120,15 +120,6 @@ public class HelmDiffAction {
         HelmReleaseRevisionAccessor helmReleaseRevisionAccessor2 = new HelmReleaseRevisionAccessor(namespaceSecretStringStringNamespaceSecretReleaseRevision2);
         String title2 = helmReleaseRevisionAccessor2.getTitle();
 
-
-        // Sacrificial file
-        LightVirtualFile sacrificeVirtualFile = new LightVirtualFile("_",
-                PlainTextFileType.INSTANCE,
-                "");
-        sacrificeVirtualFile.setWritable(false);
-        sacrificeVirtualFile.setLanguage(PlainTextLanguage.INSTANCE);
-        fileEditorManager.openFile(sacrificeVirtualFile, true);
-
         EditorWindow currentWindow = fileEditorManager.getCurrentWindow();
         fileEditorManager.createSplitter(JSplitPane.VERTICAL_SPLIT, currentWindow);
 
@@ -231,9 +222,6 @@ public class HelmDiffAction {
                     Constants.NOTES + title2);
             diffManager.showDiff(project, notesDiffRequest);
         }
-
-        fileEditorManager.closeFile(sacrificeVirtualFile);
-
     }
 
 }

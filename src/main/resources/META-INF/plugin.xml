@@ -42,7 +42,6 @@
 </ul>
 <h2>Known Issues</h2>
 <ul>
-    <li>Diff editors are shown twice.</li>
     <li>get and describe commands do not work with the New Terminal <sup>Beta</sup></li>
 </ul>
 <h2>Bug Fixes</h2>
