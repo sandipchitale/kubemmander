@@ -8,13 +8,10 @@ import com.intellij.diff.util.DiffUserDataKeys;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.fileEditor.ex.FileEditorManagerEx;
 import com.intellij.openapi.fileEditor.impl.EditorWindow;
-import com.intellij.openapi.fileTypes.PlainTextFileType;
-import com.intellij.openapi.fileTypes.PlainTextLanguage;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.DialogBuilder;
 import com.intellij.openapi.ui.DialogWrapper;
 import com.intellij.openapi.ui.Messages;
-import com.intellij.testFramework.LightVirtualFile;
 import com.intellij.ui.components.JBList;
 
 import javax.swing.*;
