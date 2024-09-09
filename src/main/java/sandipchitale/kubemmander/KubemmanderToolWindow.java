@@ -969,7 +969,7 @@ public class KubemmanderToolWindow {
 
         // Templates
         if (whatPanel.isTemplates()) {
-            FileType fileType = FileTypeUtils.getFileType("Helm template files", "YAML");
+            FileType fileType = FileTypeUtils.getFileType("Helm YAML template", "YAML");
             LightVirtualFile templatesvaluesLightVirtualFile = new LightVirtualFile(Constants.TEMPLATES + title,
                     fileType,
                     helmReleaseRevisionAccessor.getTemplates());
