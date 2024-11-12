@@ -8,6 +8,7 @@ import com.intellij.diff.util.DiffUserDataKeys;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.fileEditor.ex.FileEditorManagerEx;
 import com.intellij.openapi.fileEditor.impl.EditorWindow;
+import com.intellij.openapi.fileTypes.FileType;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.DialogBuilder;
 import com.intellij.openapi.ui.DialogWrapper;
@@ -125,10 +126,17 @@ public class HelmDiffAction {
 
         // Chart Info diff
         if (whatPanel.isChartInfo()) {
-            DiffContent chartInfoContent1 = diffContentFactory.create(project,
-                    helmReleaseRevisionAccessor1.getChartInfo());
-            DiffContent chartInfoContent2 = diffContentFactory.create(project,
-                    helmReleaseRevisionAccessor2.getChartInfo());
+            FileType fileType = FileTypeUtils.getFileType("YAML");
+            DiffContent chartInfoContent1 = DiffUtils.createDiffContent(diffContentFactory,
+                    project,
+                    Constants.CHART_INFO + title1,
+                    helmReleaseRevisionAccessor1.getChartInfo(),
+                    fileType);
+            DiffContent chartInfoContent2 = DiffUtils.createDiffContent(diffContentFactory,
+                    project,
+                    Constants.CHART_INFO + title2,
+                    helmReleaseRevisionAccessor2.getChartInfo(),
+                    fileType);
             chartInfoContent1.putUserData(DiffUserDataKeys.FORCE_READ_ONLY, true);
             chartInfoContent2.putUserData(DiffUserDataKeys.FORCE_READ_ONLY, true);
             SimpleDiffRequest chartInfoDiffRequest = new SimpleDiffRequest(
@@ -142,65 +150,93 @@ public class HelmDiffAction {
 
         // Values diff
         if (whatPanel.isValues()) {
-            DiffContent valuesContent1 = diffContentFactory.create(project,
-                    helmReleaseRevisionAccessor1.getValues());
-            DiffContent valuesContent2 = diffContentFactory.create(project,
-                    helmReleaseRevisionAccessor2.getValues());
+            FileType fileType = FileTypeUtils.getFileType("JSON");
+            DiffContent valuesContent1 = DiffUtils.createDiffContent(diffContentFactory,
+                    project,
+                    Constants.VALUES + title1,
+                    helmReleaseRevisionAccessor1.getValues(),
+                    fileType);
+            DiffContent valuesContent2 = DiffUtils.createDiffContent(diffContentFactory,
+                    project,
+                    Constants.VALUES + title2,
+                    helmReleaseRevisionAccessor2.getValues(),
+                    fileType);
             valuesContent1.putUserData(DiffUserDataKeys.FORCE_READ_ONLY, true);
             valuesContent2.putUserData(DiffUserDataKeys.FORCE_READ_ONLY, true);
             SimpleDiffRequest valuesDiffRequest = new SimpleDiffRequest(Constants.VALUES + title1 + " vs " + Constants.VALUES + title2,
                     valuesContent1,
                     valuesContent2,
-                    Constants.VALUES + title1 + ".json",
-                    Constants.VALUES + title2 + ".json");
+                    Constants.VALUES + title1,
+                    Constants.VALUES + title2);
             diffManager.showDiff(project, valuesDiffRequest);
         }
 
         // Templates diff
         if (whatPanel.isTemplates()) {
-            DiffContent templatesContent1 = diffContentFactory.create(project,
-                    helmReleaseRevisionAccessor1.getTemplates());
-            DiffContent templatesContent2 = diffContentFactory.create(project,
-                    helmReleaseRevisionAccessor2.getTemplates());
+            FileType fileType = FileTypeUtils.getFileType("Helm YAML template", "YAML");
+            DiffContent templatesContent1 = DiffUtils.createDiffContent(diffContentFactory,
+                    project,
+                    Constants.TEMPLATES + title1,
+                    helmReleaseRevisionAccessor1.getTemplates(),
+                    fileType);
+            DiffContent templatesContent2 = DiffUtils.createDiffContent(diffContentFactory,
+                    project,
+                    Constants.TEMPLATES + title2,
+                    helmReleaseRevisionAccessor2.getTemplates(),
+                    fileType);
             templatesContent1.putUserData(DiffUserDataKeys.FORCE_READ_ONLY, true);
             templatesContent2.putUserData(DiffUserDataKeys.FORCE_READ_ONLY, true);
             SimpleDiffRequest templatesDiffRequest = new SimpleDiffRequest(Constants.TEMPLATES + title1 + " vs " + Constants.TEMPLATES + title2,
                     templatesContent1,
                     templatesContent2,
-                    Constants.TEMPLATES + title1 + ".yaml",
-                    Constants.TEMPLATES + title2 + ".yaml");
+                    Constants.TEMPLATES + title1,
+                    Constants.TEMPLATES + title2);
             diffManager.showDiff(project, templatesDiffRequest);
         }
 
         // Manifests diff
         if (whatPanel.isManifests()) {
-            DiffContent manifestsContent1 = diffContentFactory.create(project,
-                    helmReleaseRevisionAccessor1.getManifests());
-            DiffContent manifestsContent2 = diffContentFactory.create(project,
-                    helmReleaseRevisionAccessor2.getManifests());
+            FileType fileType = FileTypeUtils.getFileType("YAML");
+            DiffContent manifestsContent1 = DiffUtils.createDiffContent(diffContentFactory,
+                    project,
+                    Constants.MANIFESTS + title1,
+                    helmReleaseRevisionAccessor1.getManifests(),
+                    fileType);
+            DiffContent manifestsContent2 = DiffUtils.createDiffContent(diffContentFactory,
+                    project,
+                    Constants.MANIFESTS + title2,
+                    helmReleaseRevisionAccessor2.getManifests(),
+                    fileType);
             manifestsContent1.putUserData(DiffUserDataKeys.FORCE_READ_ONLY, true);
             manifestsContent2.putUserData(DiffUserDataKeys.FORCE_READ_ONLY, true);
             SimpleDiffRequest manifestsDiffsRequest = new SimpleDiffRequest(Constants.MANIFESTS + title1 + " vs " + Constants.MANIFESTS + title2,
                     manifestsContent1,
                     manifestsContent2,
-                    Constants.MANIFESTS + title1 + ".yaml",
-                    Constants.MANIFESTS + title2 + ".yaml");
+                    Constants.MANIFESTS + title1,
+                    Constants.MANIFESTS + title2);
             diffManager.showDiff(project, manifestsDiffsRequest);
         }
 
         // Hooks diffs
         if (whatPanel.isHooks()) {
-            DiffContent hooksContent1 = diffContentFactory.create(project,
-                    helmReleaseRevisionAccessor1.getHooks());
-            DiffContent hooksContent2 = diffContentFactory.create(project,
-                    helmReleaseRevisionAccessor2.getHooks());
+            FileType fileType = FileTypeUtils.getFileType("YAML");
+            DiffContent hooksContent1 = DiffUtils.createDiffContent(diffContentFactory,
+                    project,
+                    Constants.HOOKS + title1,
+                    helmReleaseRevisionAccessor1.getHooks(),
+                    fileType);
+            DiffContent hooksContent2 = DiffUtils.createDiffContent(diffContentFactory,
+                    project,
+                    Constants.HOOKS + title2,
+                    helmReleaseRevisionAccessor2.getHooks(),
+                    fileType);
             hooksContent1.putUserData(DiffUserDataKeys.FORCE_READ_ONLY, true);
             hooksContent2.putUserData(DiffUserDataKeys.FORCE_READ_ONLY, true);
             SimpleDiffRequest hooksDiffRequest = new SimpleDiffRequest(Constants.HOOKS + title1 + " vs " + Constants.HOOKS + title2,
                     hooksContent1,
                     hooksContent2,
-                    Constants.HOOKS + title1 + ".yaml",
-                    Constants.HOOKS + title2 + ".yaml");
+                    Constants.HOOKS + title1,
+                    Constants.HOOKS + title2);
             diffManager.showDiff(project, hooksDiffRequest);
         }
 
