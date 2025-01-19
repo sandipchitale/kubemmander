@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "sandipchitale"
-version = "1.14"
+version = "1.15"
 
 repositories {
     mavenCentral()
@@ -22,7 +22,7 @@ dependencies {
 // Configure Gradle IntelliJ Plugin
 // Read more: https://plugins.jetbrains.com/docs/intellij/tools-gradle-intellij-plugin.html
 intellij {
-    version.set("2023.2.5")
+    version.set("2024.1.7")
     type.set("IC") // Target IDE Platform
 
     plugins.set(listOf("terminal"))
@@ -45,7 +45,7 @@ tasks {
     }
 
     patchPluginXml {
-        sinceBuild.set("232")
+        sinceBuild.set("241")
         untilBuild.set("251.*")
     }
 
