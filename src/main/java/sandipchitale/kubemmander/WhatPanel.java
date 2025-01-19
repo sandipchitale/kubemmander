@@ -37,7 +37,7 @@ public class WhatPanel extends BorderLayoutPanel {
         WhatPanel whatPanel = new WhatPanel();
 
         JPanel whatCheckBoxesPanel = new JPanel(new GridLayout(0, 1, 5, 5));
-
+        whatCheckBoxesPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 10));
         whatPanel.add(whatCheckBoxesPanel, at);
 
         whatPanel.titleLabel = new JLabel("What to Load for Release.Revision [ Namespace ]");
