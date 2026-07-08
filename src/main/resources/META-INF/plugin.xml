@@ -22,34 +22,6 @@
     <depends>com.intellij.modules.platform</depends>
     <depends>org.jetbrains.plugins.terminal</depends>
 
-    <change-notes><![CDATA[
-<h2>New Features</h2>
-<ul>
-    <li>Helm Get command</li>
-    <li>Helm diff</li>
-</ul>
-<h2>Features</h2>
-<ul>
-    <li>Filter by selected namespaces</li>
-    <li>Show Helm releases</li>
-    <li>Include instances checkbox</li>
-    <li>Support connect, disconnect, reconnect action.</li>
-    <li>Wait cursor</li>
-    <li>Get command</li>
-    <li>Describe command</li>
-    <li>Load command (get -o yaml)</li>
-    <li>Documentation command</li>
-</ul>
-<h2>Known Issues</h2>
-<ul>
-    <li>get and describe commands do not work with the New Terminal <sup>Beta</sup></li>
-</ul>
-<h2>Bug Fixes</h2>
-<ul>
-    <li>None</li>
-</ul>
-]]></change-notes>
-
     <!-- Extension points defined by the plugin.
          Read more: https://plugins.jetbrains.com/docs/intellij/plugin-extension-points.html -->
     <extensions defaultExtensionNs="com.intellij">

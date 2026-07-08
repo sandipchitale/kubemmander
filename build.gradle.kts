@@ -1,28 +1,18 @@
 plugins {
     id("java")
-    id("org.jetbrains.kotlin.jvm") version "1.9.23"
-    id("org.jetbrains.intellij.platform") version "2.5.0"
-}
-
-group = "sandipchitale"
-version = "1.18"
-
-repositories {
-    mavenCentral()
-
-    intellijPlatform {
-        defaultRepositories()
-    }
+    id("org.jetbrains.intellij.platform")
+    id("org.jetbrains.changelog")
 }
 
 dependencies {
-    implementation ("io.fabric8:kubernetes-client:6.13.3")
+    implementation("io.fabric8:kubernetes-client:7.3.1")
 
+    // IntelliJ Platform Gradle Plugin Dependencies Extension - read more: https://plugins.jetbrains.com/docs/intellij/tools-intellij-platform-gradle-plugin-dependencies-extension.html
     intellijPlatform {
         if (project.hasProperty("runIde_ideDir")) {
             local("${project.extra["runIde_ideDir"]}")
         } else {
-            intellijIdeaCommunity("2024.2")
+            intellijIdea("2025.2.6.2")
         }
 
         // Declare dependency on the bundled Terminal plugin
@@ -34,28 +24,24 @@ configurations.all {
     exclude("org.slf4j")
 }
 
-tasks {
-    // Set the JVM compatibility versions
-    withType<JavaCompile> {
-        sourceCompatibility = "17"
-        targetCompatibility = "17"
-    }
-    withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
-        kotlinOptions.jvmTarget = "17"
+intellijPlatform {
+    pluginConfiguration {
+        ideaVersion {
+            sinceBuild = "252"
+            untilBuild = provider { null }
+        }
     }
 
-    patchPluginXml {
-        sinceBuild.set("241")
-        untilBuild.set("253.*")
+    pluginVerification {
+        ides {
+            recommended()
+        }
     }
+}
 
-    signPlugin {
-        certificateChain.set(System.getenv("CERTIFICATE_CHAIN"))
-        privateKey.set(System.getenv("PRIVATE_KEY"))
-        password.set(System.getenv("PRIVATE_KEY_PASSWORD"))
-    }
-
-    publishPlugin {
-        token.set(System.getenv("PUBLISH_TOKEN"))
-    }
+changelog {
+    groups.empty()
+    // Plugin versions use two segments (e.g. 1.18) rather than SemVer
+    headerParserRegex = """(\d+(?:\.\d+)+)""".toRegex()
+    repositoryUrl = "https://github.com/sandipchitale/kubemmander"
 }

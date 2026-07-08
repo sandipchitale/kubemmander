@@ -6,7 +6,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import io.fabric8.kubernetes.api.model.Secret;
 import org.apache.commons.io.IOUtils;
-import org.yaml.snakeyaml.external.biz.base64Coder.Base64Coder;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -40,9 +39,9 @@ public class HelmReleaseRevisionAccessor {
         if (releaseJsonNode == null) {
             Secret secret = namespaceSecretReleaseRevision.secret();
             String release = secret.getData().get("release");
-            byte[] decodedRelease = Base64Coder.decode(release);
+            byte[] decodedRelease = Base64.getDecoder().decode(release);
 
-            decodedRelease = Base64Coder.decode(new String(decodedRelease, StandardCharsets.UTF_8));
+            decodedRelease = Base64.getDecoder().decode(new String(decodedRelease, StandardCharsets.UTF_8));
             try {
                 GZIPInputStream gzipInputStream = new GZIPInputStream(new ByteArrayInputStream(decodedRelease));
                 ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
@@ -96,7 +95,7 @@ public class HelmReleaseRevisionAccessor {
                 templatesStringBuilder.append("# Template: ");
                 templatesStringBuilder.append(template.get("name").asText());
                 templatesStringBuilder.append("\n");
-                templatesStringBuilder.append(new String(Base64Coder.decode(template.get("data").asText()), StandardCharsets.UTF_8));
+                templatesStringBuilder.append(new String(Base64.getDecoder().decode(template.get("data").asText()), StandardCharsets.UTF_8));
                 templatesStringBuilder.append("\n");
             });
             templates = templatesStringBuilder.toString();
