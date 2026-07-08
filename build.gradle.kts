@@ -32,6 +32,10 @@ intellijPlatform {
         }
     }
 
+    publishing {
+        token = providers.gradleProperty("intellijPublishToken")
+    }
+
     pluginVerification {
         ides {
             recommended()

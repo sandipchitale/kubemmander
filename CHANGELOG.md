@@ -4,6 +4,8 @@
 
 ## [Unreleased]
 
+## [1.19] - 2026-07-07
+
 ### Changed
 
 - Modernized the build to the current IntelliJ Platform plugin project standard (Gradle 9.5, IntelliJ Platform Gradle Plugin 2.17)
@@ -32,3 +34,7 @@
 ### Known Issues
 
 - get and describe commands do not work with the New Terminal (Beta)
+
+[Unreleased]: https://github.com/sandipchitale/kubemmander/compare/v1.19...HEAD
+[1.19]: https://github.com/sandipchitale/kubemmander/compare/v1.18...v1.19
+[1.18]: https://github.com/sandipchitale/kubemmander/commits/v1.18
